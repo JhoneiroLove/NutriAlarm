@@ -1,5 +1,17 @@
 package com.upao.nutrialarm.data.remote.firebase
 
+import com.google.firebase.firestore.FirebaseFirestore
+import com.google.firebase.firestore.ktx.firestore
+import com.google.firebase.firestore.ktx.toObject
+import com.google.firebase.ktx.Firebase
+import com.upao.nutrialarm.data.remote.firebase.dto.*
+import com.upao.nutrialarm.domain.model.*
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.tasks.await
+import kotlinx.coroutines.withContext
+import javax.inject.Inject
+import javax.inject.Singleton
+
 @Singleton
 class FirestoreService @Inject constructor() {
 

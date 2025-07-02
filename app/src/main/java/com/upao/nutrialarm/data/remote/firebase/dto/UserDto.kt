@@ -1,5 +1,9 @@
 package com.upao.nutrialarm.data.remote.firebase.dto
 
+import com.upao.nutrialarm.domain.model.User
+import com.upao.nutrialarm.domain.model.ActivityLevel
+import com.upao.nutrialarm.domain.model.AnemiaRisk
+
 data class UserDto(
     val id: String = "",
     val email: String = "",
@@ -39,4 +43,3 @@ fun User.toDto(): UserDto {
         createdAt = createdAt
     )
 }
-

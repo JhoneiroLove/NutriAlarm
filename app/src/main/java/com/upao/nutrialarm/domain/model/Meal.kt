@@ -9,7 +9,16 @@ data class Meal(
     val ironContent: Double = 0.0, // mg de hierro
     val calories: Double = 0.0,
     val preparationTime: Int = 0, // minutos
-    val imageUrl: String = ""
+    val imageUrl: String = "",
+    val vitaminC: Double = 0.0,
+    val folate: Double = 0.0
 )
 
-enum class MealType { BREAKFAST, LUNCH, DINNER }
+enum class MealType {
+    BREAKFAST,
+    SCHOOL_SNACK,
+    LUNCH,
+    AFTERNOON_SNACK,
+    DINNER,
+    OPTIONAL_SNACK
+}

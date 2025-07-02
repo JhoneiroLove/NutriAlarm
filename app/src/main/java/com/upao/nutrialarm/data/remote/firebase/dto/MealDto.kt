@@ -1,5 +1,8 @@
 package com.upao.nutrialarm.data.remote.firebase.dto
 
+import com.upao.nutrialarm.domain.model.Meal
+import com.upao.nutrialarm.domain.model.MealType
+
 data class MealDto(
     val id: String = "",
     val name: String = "",

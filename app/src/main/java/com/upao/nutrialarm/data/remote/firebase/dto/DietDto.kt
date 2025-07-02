@@ -1,5 +1,8 @@
 package com.upao.nutrialarm.data.remote.firebase.dto
 
+import com.upao.nutrialarm.domain.model.Diet
+import com.upao.nutrialarm.domain.model.AnemiaRisk
+
 data class DietDto(
     val id: String = "",
     val name: String = "",
@@ -21,4 +24,3 @@ data class DietDto(
         )
     }
 }
-
