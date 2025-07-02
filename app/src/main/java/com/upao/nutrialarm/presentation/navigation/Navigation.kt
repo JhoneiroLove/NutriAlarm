@@ -10,6 +10,7 @@ import com.upao.nutrialarm.presentation.auth.RegisterScreen
 import com.upao.nutrialarm.presentation.diet.DietListScreen
 import com.upao.nutrialarm.presentation.home.HomeScreen
 import com.upao.nutrialarm.presentation.profile.ProfileScreen
+import com.upao.nutrialarm.presentation.alarm.AlarmConfigScreen
 
 @Composable
 fun NavigationGraph(
@@ -66,6 +67,17 @@ fun NavigationGraph(
 
         composable("profile") {
             ProfileScreen(
+                onNavigateBack = {
+                    navController.popBackStack()
+                },
+                onNavigateToAlarms = {
+                    navController.navigate("alarms")
+                }
+            )
+        }
+
+        composable("alarms") {
+            AlarmConfigScreen(
                 onNavigateBack = {
                     navController.popBackStack()
                 }

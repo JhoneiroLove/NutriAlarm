@@ -22,6 +22,11 @@
         android:theme="@style/Theme.NutriAlarm"
         tools:targetApi="31">
 
+        <!-- AdMob App ID (ID de prueba - reemplaza con tu ID real cuando tengas uno) -->
+        <meta-data
+            android:name="com.google.android.gms.ads.APPLICATION_ID"
+            android:value="ca-app-pub-9430651300419058~2826649282"/>
+
         <activity
             android:name=".MainActivity"
             android:exported="true"
@@ -41,6 +46,16 @@
                 <action android:name="android.intent.action.BOOT_COMPLETED" />
             </intent-filter>
         </receiver>
+
+        <!-- Receiver para alarmas -->
+        <receiver android:name=".util.AlarmReceiver"
+            android:enabled="true"
+            android:exported="false" />
+
+        <!-- Receiver para marcar comidas como consumidas -->
+        <receiver android:name=".util.MealConsumedReceiver"
+            android:enabled="true"
+            android:exported="false" />
 
     </application>
 
