@@ -6,10 +6,17 @@ import androidx.room.OnConflictStrategy
 import androidx.room.Query
 import androidx.room.Transaction
 import com.upao.nutrialarm.data.local.database.entities.DietEntity
+import com.upao.nutrialarm.data.local.database.entities.DietMealCrossRef
 import com.upao.nutrialarm.data.local.database.relations.DietWithMeals
 
 @Dao
 interface DietDao {
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun insertDietMealCrossRef(crossRef: DietMealCrossRef)
+
+    @Query("SELECT * FROM diets WHERE id = :dietId")
+    suspend fun getDietById(dietId: String): DietEntity?
 
     @Query("SELECT * FROM diets")
     suspend fun getAllDiets(): List<DietEntity>

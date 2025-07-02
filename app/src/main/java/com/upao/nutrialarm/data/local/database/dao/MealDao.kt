@@ -10,6 +10,9 @@ import com.upao.nutrialarm.data.local.database.entities.MealEntity
 @Dao
 interface MealDao {
 
+    @Query("SELECT * FROM meals WHERE isPreloaded = 1")
+    suspend fun getPreloadedMeals(): List<MealEntity>
+
     @Query("SELECT * FROM meals WHERE mealType = :mealType")
     suspend fun getMealsByType(mealType: String): List<MealEntity>
 
