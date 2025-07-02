@@ -15,10 +15,13 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.hilt.navigation.compose.hiltViewModel
+import com.upao.nutrialarm.domain.model.DayOfWeek
 import com.upao.nutrialarm.domain.model.MealType
 import com.upao.nutrialarm.ui.theme.*
 import kotlinx.coroutines.delay
@@ -26,28 +29,21 @@ import kotlinx.coroutines.delay
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AlarmConfigScreen(
-    onNavigateBack: () -> Unit = {}
+    onNavigateBack: () -> Unit = {},
+    viewModel: AlarmConfigViewModel = hiltViewModel()
 ) {
+    val context = LocalContext.current
+    val uiState by viewModel.uiState.collectAsState()
+
     // Animaciones
     var headerVisible by remember { mutableStateOf(false) }
     var contentVisible by remember { mutableStateOf(false) }
 
     LaunchedEffect(Unit) {
+        viewModel.loadAlarms("current_user") // TODO: Get real user ID
         headerVisible = true
         delay(200)
         contentVisible = true
-    }
-
-    // Estados para cada alarma
-    val alarmStates = remember {
-        mutableStateMapOf(
-            MealType.BREAKFAST to AlarmState("06:30", true),
-            MealType.SCHOOL_SNACK to AlarmState("09:30", true),
-            MealType.LUNCH to AlarmState("13:30", true),
-            MealType.AFTERNOON_SNACK to AlarmState("17:00", true),
-            MealType.DINNER to AlarmState("19:30", true),
-            MealType.OPTIONAL_SNACK to AlarmState("21:00", false)
-        )
     }
 
     Box(
@@ -85,15 +81,10 @@ fun AlarmConfigScreen(
                 )
             ) {
                 AlarmContent(
-                    alarmStates = alarmStates,
-                    onTimeChange = { mealType, time ->
-                        alarmStates[mealType] = alarmStates[mealType]?.copy(time = time)
-                            ?: AlarmState(time, true)
-                    },
-                    onEnabledChange = { mealType, enabled ->
-                        alarmStates[mealType] = alarmStates[mealType]?.copy(enabled = enabled)
-                            ?: AlarmState("06:00", enabled)
-                    }
+                    uiState = uiState,
+                    onTimeChange = viewModel::updateAlarmTime,
+                    onEnabledChange = viewModel::toggleAlarm,
+                    onSaveAlarm = viewModel::saveAlarm
                 )
             }
         }
@@ -173,9 +164,10 @@ private fun AlarmHeader(onNavigateBack: () -> Unit) {
 
 @Composable
 private fun AlarmContent(
-    alarmStates: Map<MealType, AlarmState>,
+    uiState: AlarmConfigUiState,
     onTimeChange: (MealType, String) -> Unit,
-    onEnabledChange: (MealType, Boolean) -> Unit
+    onEnabledChange: (MealType, Boolean) -> Unit,
+    onSaveAlarm: (MealType) -> Unit
 ) {
     LazyColumn(
         modifier = Modifier.fillMaxSize(),
@@ -187,14 +179,21 @@ private fun AlarmContent(
         }
 
         items(MealType.values().toList()) { mealType ->
-            val alarmState = alarmStates[mealType] ?: AlarmState("06:00", true)
+            val alarmState = uiState.alarmStates[mealType] ?: AlarmState("06:00", false)
 
             AlarmCard(
                 mealType = mealType,
                 alarmState = alarmState,
                 onTimeChange = { time -> onTimeChange(mealType, time) },
-                onEnabledChange = { enabled -> onEnabledChange(mealType, enabled) }
+                onEnabledChange = { enabled -> onEnabledChange(mealType, enabled) },
+                onSave = { onSaveAlarm(mealType) }
             )
+        }
+
+        if (uiState.message.isNotEmpty()) {
+            item {
+                MessageCard(message = uiState.message, isError = uiState.isError)
+            }
         }
     }
 }
@@ -246,13 +245,13 @@ private fun InfoCard() {
 
                 Column(modifier = Modifier.weight(1f)) {
                     Text(
-                        text = "Horarios Personalizados",
+                        text = "Recordatorios Inteligentes",
                         fontSize = 16.sp,
                         fontWeight = FontWeight.Bold,
                         color = NutriGrayDark
                     )
                     Text(
-                        text = "Configura los horarios que mejor se adapten a tu rutina diaria",
+                        text = "Configura alarmas para no olvidar tus comidas",
                         fontSize = 14.sp,
                         color = NutriGray,
                         lineHeight = 18.sp
@@ -269,9 +268,12 @@ private fun AlarmCard(
     mealType: MealType,
     alarmState: AlarmState,
     onTimeChange: (String) -> Unit,
-    onEnabledChange: (Boolean) -> Unit
+    onEnabledChange: (Boolean) -> Unit,
+    onSave: () -> Unit
 ) {
     var showTimePicker by remember { mutableStateOf(false) }
+    var selectedHour by remember { mutableStateOf(alarmState.time.split(":")[0].toInt()) }
+    var selectedMinute by remember { mutableStateOf(alarmState.time.split(":")[1].toInt()) }
 
     Card(
         modifier = Modifier.fillMaxWidth(),
@@ -359,28 +361,110 @@ private fun AlarmCard(
                         )
                     }
                 }
+
+                Spacer(modifier = Modifier.height(12.dp))
+
+                Button(
+                    onClick = onSave,
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = NutriGreen
+                    ),
+                    shape = RoundedCornerShape(12.dp)
+                ) {
+                    Icon(
+                        Icons.Default.Save,
+                        contentDescription = null,
+                        modifier = Modifier.size(18.dp)
+                    )
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text("Guardar Alarma")
+                }
             }
         }
     }
 
-    // Time Picker Dialog (simplificado)
+    // Time Picker Dialog
     if (showTimePicker) {
-        AlertDialog(
-            onDismissRequest = { showTimePicker = false },
-            title = {
-                Text("Seleccionar Hora")
+        TimePickerDialog(
+            initialHour = selectedHour,
+            initialMinute = selectedMinute,
+            onTimeSelected = { hour, minute ->
+                selectedHour = hour
+                selectedMinute = minute
+                val timeString = String.format("%02d:%02d", hour, minute)
+                onTimeChange(timeString)
+                showTimePicker = false
             },
-            text = {
-                Text("Aquí iría un time picker. Por simplicidad, puedes modificar manualmente.")
-            },
-            confirmButton = {
-                TextButton(
-                    onClick = { showTimePicker = false }
-                ) {
-                    Text("OK")
-                }
-            }
+            onDismiss = { showTimePicker = false }
         )
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun TimePickerDialog(
+    initialHour: Int,
+    initialMinute: Int,
+    onTimeSelected: (Int, Int) -> Unit,
+    onDismiss: () -> Unit
+) {
+    val timePickerState = rememberTimePickerState(
+        initialHour = initialHour,
+        initialMinute = initialMinute
+    )
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = {
+            Text("Seleccionar Hora")
+        },
+        text = {
+            TimePicker(state = timePickerState)
+        },
+        confirmButton = {
+            TextButton(
+                onClick = {
+                    onTimeSelected(timePickerState.hour, timePickerState.minute)
+                }
+            ) {
+                Text("OK")
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) {
+                Text("Cancelar")
+            }
+        }
+    )
+}
+
+@Composable
+private fun MessageCard(message: String, isError: Boolean) {
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        colors = CardDefaults.cardColors(
+            containerColor = if (isError) NutriRed.copy(alpha = 0.1f) else NutriGreen.copy(alpha = 0.1f)
+        ),
+        shape = RoundedCornerShape(12.dp)
+    ) {
+        Row(
+            modifier = Modifier.padding(16.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Icon(
+                if (isError) Icons.Default.Error else Icons.Default.CheckCircle,
+                contentDescription = null,
+                tint = if (isError) NutriRed else NutriGreen,
+                modifier = Modifier.size(20.dp)
+            )
+            Spacer(modifier = Modifier.width(8.dp))
+            Text(
+                text = message,
+                color = if (isError) NutriRed else NutriGreen,
+                fontSize = 14.sp
+            )
+        }
     }
 }
 

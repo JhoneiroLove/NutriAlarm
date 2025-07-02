@@ -3,6 +3,7 @@ package com.upao.nutrialarm.di
 import android.content.Context
 import com.upao.nutrialarm.util.AlarmManagerUtil
 import com.upao.nutrialarm.util.NotificationHelper
+import com.upao.nutrialarm.util.PermissionHelper
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -24,5 +25,11 @@ object UtilModule {
     @Singleton
     fun provideAlarmManagerUtil(@ApplicationContext context: Context): AlarmManagerUtil {
         return AlarmManagerUtil(context)
+    }
+
+    @Provides
+    @Singleton
+    fun providePermissionHelper(@ApplicationContext context: Context): PermissionHelper {
+        return PermissionHelper(context)
     }
 }

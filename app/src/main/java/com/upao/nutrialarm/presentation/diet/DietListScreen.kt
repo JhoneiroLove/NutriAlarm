@@ -31,6 +31,7 @@ import kotlinx.coroutines.delay
 @Composable
 fun DietListScreen(
     onNavigateBack: () -> Unit = {},
+    onDietClick: (String) -> Unit = {},
     viewModel: DietViewModel = hiltViewModel()
 ) {
     val diets by viewModel.diets.collectAsState()
@@ -92,7 +93,10 @@ fun DietListScreen(
                         )
                     }
                     else -> {
-                        DietContent(diets = diets)
+                        DietContent(
+                            diets = diets,
+                            onDietClick = onDietClick
+                        )
                     }
                 }
             }
@@ -105,7 +109,7 @@ private fun ModernHeader(onNavigateBack: () -> Unit) {
     Card(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(top = 24.dp, start = 16.dp, end = 16.dp, bottom = 16.dp), // Más padding top
+            .padding(top = 24.dp, start = 16.dp, end = 16.dp, bottom = 16.dp),
         colors = CardDefaults.cardColors(
             containerColor = NutriBlue
         ),
@@ -254,10 +258,13 @@ private fun ErrorContent(
 }
 
 @Composable
-private fun DietContent(diets: List<Diet>) {
+private fun DietContent(
+    diets: List<Diet>,
+    onDietClick: (String) -> Unit
+) {
     LazyColumn(
         modifier = Modifier.fillMaxSize(),
-        contentPadding = PaddingValues(start = 16.dp, end = 16.dp, bottom = 16.dp), // Sin padding top para evitar doble espaciado
+        contentPadding = PaddingValues(start = 16.dp, end = 16.dp, bottom = 16.dp),
         verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
         item {
@@ -287,9 +294,7 @@ private fun DietContent(diets: List<Diet>) {
                 ) {
                     ModernDietCard(
                         diet = diet,
-                        onClick = {
-                            // TODO: Navegar al detalle de la dieta
-                        }
+                        onClick = { onDietClick(diet.id) } // USAR LA FUNCIÓN DE NAVEGACIÓN
                     )
                 }
             }

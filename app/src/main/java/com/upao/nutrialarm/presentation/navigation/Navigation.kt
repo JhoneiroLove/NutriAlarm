@@ -8,6 +8,8 @@ import androidx.navigation.compose.rememberNavController
 import com.upao.nutrialarm.presentation.auth.LoginScreen
 import com.upao.nutrialarm.presentation.auth.RegisterScreen
 import com.upao.nutrialarm.presentation.diet.DietListScreen
+import com.upao.nutrialarm.presentation.diet.DietDetailScreen
+import com.upao.nutrialarm.presentation.meal.MealRecipeScreen
 import com.upao.nutrialarm.presentation.home.HomeScreen
 import com.upao.nutrialarm.presentation.profile.ProfileScreen
 import com.upao.nutrialarm.presentation.alarm.AlarmConfigScreen
@@ -59,6 +61,32 @@ fun NavigationGraph(
 
         composable("diets") {
             DietListScreen(
+                onNavigateBack = {
+                    navController.popBackStack()
+                },
+                onDietClick = { dietId ->
+                    navController.navigate("diet_detail/$dietId")
+                }
+            )
+        }
+
+        composable("diet_detail/{dietId}") { backStackEntry ->
+            val dietId = backStackEntry.arguments?.getString("dietId") ?: ""
+            DietDetailScreen(
+                dietId = dietId,
+                onNavigateBack = {
+                    navController.popBackStack()
+                },
+                onMealClick = { mealId ->
+                    navController.navigate("meal_recipe/$mealId")
+                }
+            )
+        }
+
+        composable("meal_recipe/{mealId}") { backStackEntry ->
+            val mealId = backStackEntry.arguments?.getString("mealId") ?: ""
+            MealRecipeScreen(
+                mealId = mealId,
                 onNavigateBack = {
                     navController.popBackStack()
                 }
