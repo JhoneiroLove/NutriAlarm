@@ -9,8 +9,9 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Modifier
+import androidx.navigation.compose.rememberNavController
 import com.upao.nutrialarm.domain.repository.DietRepository
-import com.upao.nutrialarm.presentation.auth.LoginScreen
+import com.upao.nutrialarm.presentation.navigation.NavigationGraph
 import com.upao.nutrialarm.ui.theme.NutriAlarmTheme
 import dagger.hilt.android.AndroidEntryPoint
 import javax.inject.Inject
@@ -30,12 +31,14 @@ class MainActivity : ComponentActivity() {
                     modifier = Modifier.fillMaxSize(),
                     color = MaterialTheme.colorScheme.background
                 ) {
+                    val navController = rememberNavController()
+
                     // Inicializar datos una sola vez
                     LaunchedEffect(Unit) {
                         dietRepository.initializePreloadedData()
                     }
 
-                    LoginScreen()
+                    NavigationGraph(navController = navController)
                 }
             }
         }

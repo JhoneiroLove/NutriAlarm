@@ -70,6 +70,7 @@ dependencies {
     // Navigation Component
     implementation("androidx.navigation:navigation-fragment-ktx:2.7.6")
     implementation("androidx.navigation:navigation-ui-ktx:2.7.6")
+    implementation("androidx.navigation:navigation-compose:2.7.6")
 
     // ViewModel & LiveData
     implementation("androidx.lifecycle:lifecycle-viewmodel-ktx:2.7.0")
@@ -90,6 +91,9 @@ dependencies {
     // Hilt Dependency Injection
     implementation("com.google.dagger:hilt-android:2.48")
     kapt("com.google.dagger:hilt-android-compiler:2.48")
+
+    // Hilt Navigation Compose
+    implementation("androidx.hilt:hilt-navigation-compose:1.1.0")
 
     // Hilt Work
     implementation("androidx.hilt:hilt-work:1.1.0")
@@ -114,6 +118,9 @@ dependencies {
 
     // Material Design Components
     implementation("com.google.android.material:material:1.11.0")
+
+    // material-icons-extended
+    implementation("androidx.compose.material:material-icons-extended:1.6.0-beta01")
 
     // ViewBinding
     implementation("androidx.databinding:viewbinding:8.2.2")
