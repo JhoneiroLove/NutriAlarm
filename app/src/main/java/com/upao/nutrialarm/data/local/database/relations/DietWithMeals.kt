@@ -11,8 +11,12 @@ data class DietWithMeals(
     @Embedded val diet: DietEntity,
     @Relation(
         parentColumn = "id",
-        entityColumn = "mealId",
-        associateBy = Junction(DietMealCrossRef::class)
+        entityColumn = "id",
+        associateBy = Junction(
+            value = DietMealCrossRef::class,
+            parentColumn = "dietId",
+            entityColumn = "mealId"
+        )
     )
     val meals: List<MealEntity>
 )

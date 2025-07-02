@@ -6,6 +6,7 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import com.upao.nutrialarm.presentation.auth.LoginScreen
+import com.upao.nutrialarm.presentation.auth.RegisterScreen
 import com.upao.nutrialarm.presentation.diet.DietListScreen
 import com.upao.nutrialarm.presentation.home.HomeScreen
 import com.upao.nutrialarm.presentation.profile.ProfileScreen
@@ -20,14 +21,26 @@ fun NavigationGraph(
     ) {
         composable("login") {
             LoginScreen(
-                onLoginClick = { email, password ->
-                    // TODO: Implementar lógica de login
+                onNavigateToHome = {
                     navController.navigate("home") {
                         popUpTo("login") { inclusive = true }
                     }
                 },
                 onRegisterClick = {
                     navController.navigate("register")
+                }
+            )
+        }
+
+        composable("register") {
+            RegisterScreen(
+                onNavigateToHome = {
+                    navController.navigate("home") {
+                        popUpTo("register") { inclusive = true }
+                    }
+                },
+                onNavigateBack = {
+                    navController.popBackStack()
                 }
             )
         }

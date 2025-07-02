@@ -24,20 +24,29 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.hilt.navigation.compose.hiltViewModel
 import com.upao.nutrialarm.ui.theme.*
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun LoginScreen(
-    onLoginClick: (email: String, password: String) -> Unit = { _, _ -> },
+    onNavigateToHome: () -> Unit = {},
     onRegisterClick: () -> Unit = {},
-    onForgotPasswordClick: () -> Unit = {},
-    isLoading: Boolean = false,
-    errorMessage: String? = null
+    viewModel: LoginViewModel = hiltViewModel()
 ) {
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
     var passwordVisible by remember { mutableStateOf(false) }
+
+    val uiState by viewModel.uiState.collectAsState()
+
+    // Observar el estado de login exitoso
+    LaunchedEffect(uiState.isLoginSuccessful) {
+        if (uiState.isLoginSuccessful) {
+            onNavigateToHome()
+            viewModel.resetLoginState()
+        }
+    }
 
     Box(
         modifier = Modifier
@@ -115,7 +124,10 @@ fun LoginScreen(
                     // Email
                     OutlinedTextField(
                         value = email,
-                        onValueChange = { email = it },
+                        onValueChange = {
+                            email = it
+                            viewModel.clearError()
+                        },
                         label = { Text("Correo electrónico") },
                         leadingIcon = {
                             Icon(Icons.Default.Email, contentDescription = null, tint = NutriBlue)
@@ -128,7 +140,10 @@ fun LoginScreen(
                     // Password
                     OutlinedTextField(
                         value = password,
-                        onValueChange = { password = it },
+                        onValueChange = {
+                            password = it
+                            viewModel.clearError()
+                        },
                         label = { Text("Contraseña") },
                         leadingIcon = {
                             Icon(Icons.Default.Lock, contentDescription = null, tint = NutriBlue)
@@ -152,7 +167,7 @@ fun LoginScreen(
                     )
 
                     // Error
-                    errorMessage?.let {
+                    uiState.errorMessage?.let {
                         Text(
                             text = it,
                             color = MaterialTheme.colorScheme.error,
@@ -162,12 +177,14 @@ fun LoginScreen(
 
                     // Login button
                     Button(
-                        onClick = { onLoginClick(email, password) },
+                        onClick = {
+                            viewModel.login(email, password)
+                        },
                         modifier = Modifier.fillMaxWidth(),
-                        enabled = !isLoading && email.isNotBlank() && password.isNotBlank(),
+                        enabled = !uiState.isLoading && email.isNotBlank() && password.isNotBlank(),
                         colors = ButtonDefaults.buttonColors(containerColor = NutriBlue)
                     ) {
-                        if (isLoading) {
+                        if (uiState.isLoading) {
                             CircularProgressIndicator(
                                 modifier = Modifier.size(20.dp),
                                 color = Color.White
@@ -175,6 +192,23 @@ fun LoginScreen(
                         } else {
                             Text("Iniciar Sesión")
                         }
+                    }
+
+                    // Demo button (temporal)
+                    OutlinedButton(
+                        onClick = onNavigateToHome,
+                        modifier = Modifier.fillMaxWidth(),
+                        colors = ButtonDefaults.outlinedButtonColors()
+                    ) {
+                        Text("Continuar sin login (Demo)", color = NutriBlue)
+                    }
+
+                    // Register button
+                    TextButton(
+                        onClick = onRegisterClick,
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Text("¿No tienes cuenta? Regístrate aquí", color = NutriBlue)
                     }
                 }
             }
