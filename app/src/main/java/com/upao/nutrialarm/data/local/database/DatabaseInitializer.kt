@@ -22,7 +22,7 @@ class DatabaseInitializer @Inject constructor(
         private const val TAG = "DatabaseInitializer"
         private const val PREFS_NAME = "nutrialarm_prefs"
         private const val KEY_DB_INITIALIZED = "db_initialized"
-        private const val DB_VERSION = 1
+        private const val DB_VERSION = 2
     }
 
     suspend fun initializeDatabase() = withContext(Dispatchers.IO) {
@@ -37,10 +37,10 @@ class DatabaseInitializer @Inject constructor(
             // Limpiar datos existentes si es necesario
             clearExistingData()
 
-            // Insertar datos predefinidos
-            insertPreloadedMeals()
-            insertPreloadedDiets()
-            insertDietMealRelations()
+            // Insertar datos predefinidos EXPANDIDOS
+            insertExpandedMeals()
+            insertExpandedDiets()
+            insertExpandedDietMealRelations()
 
             // Marcar como inicializada
             markDatabaseAsInitialized()
@@ -64,22 +64,22 @@ class DatabaseInitializer @Inject constructor(
         }
     }
 
-    private suspend fun insertPreloadedMeals() {
-        val meals = PreloadedData.getPreloadedMeals()
+    private suspend fun insertExpandedMeals() {
+        val meals = ExpandedPreloadedData.getExpandedMeals()
         mealDao.insertMeals(meals)
-        Log.d(TAG, "Inserted ${meals.size} preloaded meals")
+        Log.d(TAG, "Inserted ${meals.size} expanded meals")
     }
 
-    private suspend fun insertPreloadedDiets() {
-        val diets = PreloadedData.getPreloadedDiets()
+    private suspend fun insertExpandedDiets() {
+        val diets = ExpandedPreloadedData.getExpandedDiets()
         dietDao.insertDiets(diets)
-        Log.d(TAG, "Inserted ${diets.size} preloaded diets")
+        Log.d(TAG, "Inserted ${diets.size} expanded diets")
     }
 
-    private suspend fun insertDietMealRelations() {
-        val crossRefs = PreloadedData.getDietMealCrossRefs()
+    private suspend fun insertExpandedDietMealRelations() {
+        val crossRefs = ExpandedPreloadedData.getExpandedDietMealCrossRefs()
         mealDao.insertDietMealCrossRefs(crossRefs)
-        Log.d(TAG, "Inserted ${crossRefs.size} diet-meal relations")
+        Log.d(TAG, "Inserted ${crossRefs.size} expanded diet-meal relations")
     }
 
     private fun isDatabaseInitialized(): Boolean {
@@ -111,8 +111,8 @@ class DatabaseInitializer @Inject constructor(
             // Contar dietas
             totalDiets = dietDao.getAllDiets().size
 
-            // Contar relaciones (aproximado)
-            totalRelations = PreloadedData.getDietMealCrossRefs().size
+            // Contar relaciones
+            totalRelations = ExpandedPreloadedData.getExpandedDietMealCrossRefs().size
 
             DataIntegrityResult(
                 isValid = totalMeals > 0 && totalDiets > 0,

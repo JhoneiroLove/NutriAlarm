@@ -2,6 +2,8 @@ package com.upao.nutrialarm.di
 
 import com.upao.nutrialarm.domain.repository.AlarmRepository
 import com.upao.nutrialarm.domain.repository.UserMealPreferenceRepository
+import com.upao.nutrialarm.domain.repository.MealConsumptionRepository
+import com.upao.nutrialarm.domain.repository.UserRepository
 import com.upao.nutrialarm.domain.usecase.alarm.*
 import com.upao.nutrialarm.domain.usecase.meal.*
 import com.upao.nutrialarm.util.AlarmManagerUtil
@@ -90,5 +92,23 @@ object UseCaseModule {
         repository: UserMealPreferenceRepository
     ): InitializeDefaultPreferencesUseCase {
         return InitializeDefaultPreferencesUseCase(repository)
+    }
+
+    // USE CASES PARA PROGRESO DINÁMICO
+    @Provides
+    @Singleton
+    fun provideGetNextMealUseCase(
+        mealConsumptionRepository: MealConsumptionRepository
+    ): GetNextMealUseCase {
+        return GetNextMealUseCase(mealConsumptionRepository)
+    }
+
+    @Provides
+    @Singleton
+    fun provideGetDailyProgressUseCase(
+        mealConsumptionRepository: MealConsumptionRepository,
+        userRepository: UserRepository
+    ): GetDailyProgressUseCase {
+        return GetDailyProgressUseCase(mealConsumptionRepository, userRepository)
     }
 }

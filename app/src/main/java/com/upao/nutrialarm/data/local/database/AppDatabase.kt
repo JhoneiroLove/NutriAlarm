@@ -15,9 +15,10 @@ import com.upao.nutrialarm.data.local.database.entities.*
         MealEntity::class,
         DietMealCrossRef::class,
         AlarmEntity::class,
-        UserMealPreferenceEntity::class
+        UserMealPreferenceEntity::class,
+        MealConsumptionEntity::class
     ],
-    version = 2, // INCREMENTAR VERSIÓN
+    version = 3, // INCREMENTAR VERSIÓN
     exportSchema = false
 )
 @TypeConverters(Converters::class)
@@ -28,6 +29,7 @@ abstract class AppDatabase : RoomDatabase() {
     abstract fun mealDao(): MealDao
     abstract fun alarmDao(): AlarmDao
     abstract fun userMealPreferenceDao(): UserMealPreferenceDao
+    abstract fun mealConsumptionDao(): MealConsumptionDao // NUEVO DAO
 
     companion object {
         @Volatile
@@ -40,7 +42,7 @@ abstract class AppDatabase : RoomDatabase() {
                     AppDatabase::class.java,
                     "nutrialarm_database"
                 )
-                    .fallbackToDestructiveMigration() // Para desarrollo solo - BORRAR EN PRODUCCIÓN
+                    .fallbackToDestructiveMigration() // Para desarrollo - quitar en producción
                     .build()
                 INSTANCE = instance
                 instance

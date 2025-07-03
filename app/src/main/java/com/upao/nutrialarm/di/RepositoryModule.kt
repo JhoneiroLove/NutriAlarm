@@ -35,4 +35,10 @@ abstract class RepositoryModule {
     abstract fun bindUserMealPreferenceRepository(
         userMealPreferenceRepositoryImpl: UserMealPreferenceRepositoryImpl
     ): UserMealPreferenceRepository
+
+    @Binds
+    @Singleton
+    abstract fun bindMealConsumptionRepository(
+        mealConsumptionRepositoryImpl: MealConsumptionRepositoryImpl
+    ): MealConsumptionRepository
 }

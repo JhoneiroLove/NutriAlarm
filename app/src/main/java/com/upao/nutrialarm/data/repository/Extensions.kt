@@ -164,3 +164,34 @@ fun UserMealPreference.toEntity(): UserMealPreferenceEntity {
         updatedAt = updatedAt
     )
 }
+
+// MealConsumption Extensions
+fun MealConsumptionEntity.toDomain(): MealConsumption {
+    return MealConsumption(
+        id = id,
+        userId = userId,
+        mealId = mealId,
+        mealType = MealType.valueOf(mealType),
+        consumedAt = consumedAt,
+        date = date,
+        ironContent = ironContent,
+        calories = calories,
+        vitaminC = vitaminC,
+        folate = folate
+    )
+}
+
+fun MealConsumption.toEntity(): MealConsumptionEntity {
+    return MealConsumptionEntity(
+        id = id,
+        userId = userId,
+        mealId = mealId,
+        mealType = mealType.name,
+        consumedAt = consumedAt,
+        date = date,
+        ironContent = ironContent,
+        calories = calories,
+        vitaminC = vitaminC,
+        folate = folate
+    )
+}

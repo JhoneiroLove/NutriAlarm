@@ -11,7 +11,7 @@ import com.upao.nutrialarm.presentation.diet.DietListScreen
 import com.upao.nutrialarm.presentation.diet.DietDetailScreen
 import com.upao.nutrialarm.presentation.meal.MealRecipeScreen
 import com.upao.nutrialarm.presentation.meal.MealSelectionScreen
-import com.upao.nutrialarm.presentation.home.HomeScreen
+import com.upao.nutrialarm.presentation.home.DynamicHomeScreen // CAMBIADO
 import com.upao.nutrialarm.presentation.profile.ProfileScreen
 import com.upao.nutrialarm.presentation.alarm.AlarmConfigScreen
 import com.upao.nutrialarm.presentation.settings.SettingsScreen
@@ -54,10 +54,10 @@ fun NavigationGraph(
         }
 
         // ========================================
-        // PANTALLA PRINCIPAL
+        // PANTALLA PRINCIPAL - AHORA DINÁMICA
         // ========================================
         composable("home") {
-            HomeScreen(
+            DynamicHomeScreen( // USAR LA NUEVA PANTALLA DINÁMICA
                 onNavigateToDiets = {
                     navController.navigate("diets")
                 },
@@ -158,46 +158,6 @@ fun NavigationGraph(
                     navController.popBackStack()
                 }
             )
-        }
-
-        // ========================================
-        // RUTAS FUTURAS (PREPARADAS)
-        // ========================================
-
-        // Edición de perfil
-        composable("edit_profile") {
-            // TODO: Implementar EditProfileScreen
-            // EditProfileScreen(
-            //     onNavigateBack = { navController.popBackStack() }
-            // )
-        }
-
-        // Estadísticas nutricionales
-        composable("nutrition_stats") {
-            // TODO: Implementar NutritionStatsScreen
-            // NutritionStatsScreen(
-            //     onNavigateBack = { navController.popBackStack() }
-            // )
-        }
-
-        // Historial de comidas
-        composable("meal_history") {
-            // TODO: Implementar MealHistoryScreen
-            // MealHistoryScreen(
-            //     onNavigateBack = { navController.popBackStack() }
-            // )
-        }
-
-        // Onboarding (para nuevos usuarios)
-        composable("onboarding") {
-            // TODO: Implementar OnboardingScreen
-            // OnboardingScreen(
-            //     onComplete = {
-            //         navController.navigate("home") {
-            //             popUpTo("onboarding") { inclusive = true }
-            //         }
-            //     }
-            // )
         }
     }
 }
