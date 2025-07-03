@@ -192,7 +192,7 @@ private fun MealSelectionContent(
                     InfoCard()
                 }
 
-                // Pestañas de tipos de comida
+                // ✅ PESTAÑAS CORREGIDAS - Sin LazyColumn anidado
                 item {
                     MealTypeTabsCard(
                         selectedMealType = selectedMealType,
@@ -345,6 +345,7 @@ private fun InfoCard() {
     }
 }
 
+// ✅ CORRECCIÓN PRINCIPAL: Cambiar LazyColumn por Column normal
 @Composable
 private fun MealTypeTabsCard(
     selectedMealType: MealType?,
@@ -369,10 +370,11 @@ private fun MealTypeTabsCard(
                 modifier = Modifier.padding(bottom = 12.dp)
             )
 
-            LazyColumn(
+            // ✅ CAMBIO CRÍTICO: Column en lugar de LazyColumn
+            Column(
                 verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {
-                itemsIndexed(MealType.values().toList()) { index, mealType ->
+                MealType.values().forEachIndexed { index, mealType ->
                     MealTypeTab(
                         mealType = mealType,
                         isSelected = selectedMealType == mealType,
