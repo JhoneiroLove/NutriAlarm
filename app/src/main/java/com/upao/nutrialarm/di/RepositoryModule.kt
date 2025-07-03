@@ -29,4 +29,10 @@ abstract class RepositoryModule {
     abstract fun bindAlarmRepository(
         alarmRepositoryImpl: AlarmRepositoryImpl
     ): AlarmRepository
+
+    @Binds
+    @Singleton
+    abstract fun bindUserMealPreferenceRepository(
+        userMealPreferenceRepositoryImpl: UserMealPreferenceRepositoryImpl
+    ): UserMealPreferenceRepository
 }

@@ -22,7 +22,9 @@ object DatabaseModule {
             context.applicationContext,
             AppDatabase::class.java,
             "nutrialarm_database"
-        ).build()
+        )
+            .fallbackToDestructiveMigration() // Para desarrollo - quitar en producción
+            .build()
     }
 
     @Provides
@@ -36,4 +38,8 @@ object DatabaseModule {
 
     @Provides
     fun provideAlarmDao(database: AppDatabase): AlarmDao = database.alarmDao()
+
+    @Provides
+    fun provideUserMealPreferenceDao(database: AppDatabase): UserMealPreferenceDao =
+        database.userMealPreferenceDao()
 }

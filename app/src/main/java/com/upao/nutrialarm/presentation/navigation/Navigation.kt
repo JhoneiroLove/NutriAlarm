@@ -10,6 +10,7 @@ import com.upao.nutrialarm.presentation.auth.RegisterScreen
 import com.upao.nutrialarm.presentation.diet.DietListScreen
 import com.upao.nutrialarm.presentation.diet.DietDetailScreen
 import com.upao.nutrialarm.presentation.meal.MealRecipeScreen
+import com.upao.nutrialarm.presentation.meal.MealSelectionScreen
 import com.upao.nutrialarm.presentation.home.HomeScreen
 import com.upao.nutrialarm.presentation.profile.ProfileScreen
 import com.upao.nutrialarm.presentation.alarm.AlarmConfigScreen
@@ -93,6 +94,18 @@ fun NavigationGraph(
             )
         }
 
+        // Selección de menús personalizados
+        composable("meal_selection") {
+            MealSelectionScreen(
+                onNavigateBack = {
+                    navController.popBackStack()
+                },
+                onMealRecipeClick = { mealId ->
+                    navController.navigate("meal_recipe/$mealId")
+                }
+            )
+        }
+
         composable("profile") {
             ProfileScreen(
                 onNavigateBack = {
@@ -100,6 +113,9 @@ fun NavigationGraph(
                 },
                 onNavigateToAlarms = {
                     navController.navigate("alarms")
+                },
+                onNavigateToMealSelection = {
+                    navController.navigate("meal_selection")
                 }
             )
         }

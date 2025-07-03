@@ -5,10 +5,7 @@ import androidx.room.Room
 import androidx.room.RoomDatabase
 import androidx.room.TypeConverters
 import android.content.Context
-import com.upao.nutrialarm.data.local.database.dao.DietDao
-import com.upao.nutrialarm.data.local.database.dao.MealDao
-import com.upao.nutrialarm.data.local.database.dao.UserDao
-import com.upao.nutrialarm.data.local.database.dao.AlarmDao
+import com.upao.nutrialarm.data.local.database.dao.*
 import com.upao.nutrialarm.data.local.database.entities.*
 
 @Database(
@@ -17,9 +14,10 @@ import com.upao.nutrialarm.data.local.database.entities.*
         DietEntity::class,
         MealEntity::class,
         DietMealCrossRef::class,
-        AlarmEntity::class
+        AlarmEntity::class,
+        UserMealPreferenceEntity::class
     ],
-    version = 1,
+    version = 2, // INCREMENTAR VERSIÓN
     exportSchema = false
 )
 @TypeConverters(Converters::class)
@@ -29,6 +27,7 @@ abstract class AppDatabase : RoomDatabase() {
     abstract fun dietDao(): DietDao
     abstract fun mealDao(): MealDao
     abstract fun alarmDao(): AlarmDao
+    abstract fun userMealPreferenceDao(): UserMealPreferenceDao
 
     companion object {
         @Volatile
@@ -40,7 +39,9 @@ abstract class AppDatabase : RoomDatabase() {
                     context.applicationContext,
                     AppDatabase::class.java,
                     "nutrialarm_database"
-                ).build()
+                )
+                    .fallbackToDestructiveMigration() // Para desarrollo solo - BORRAR EN PRODUCCIÓN
+                    .build()
                 INSTANCE = instance
                 instance
             }

@@ -25,6 +25,7 @@ import com.upao.nutrialarm.ui.theme.NutriAlarmTheme
 import com.upao.nutrialarm.ui.theme.NutriBlue
 import com.upao.nutrialarm.ui.theme.NutriGray
 import com.upao.nutrialarm.ui.theme.NutriGrayDark
+import com.upao.nutrialarm.ui.theme.NutriGreen
 import com.upao.nutrialarm.ui.theme.NutriOrange
 import com.upao.nutrialarm.ui.theme.NutriRed
 import kotlinx.coroutines.delay
@@ -34,6 +35,7 @@ import kotlinx.coroutines.delay
 fun ProfileScreen(
     onNavigateBack: () -> Unit = {},
     onNavigateToAlarms: () -> Unit = {},
+    onNavigateToMealSelection: () -> Unit = {},
     viewModel: UserProfileViewModel = hiltViewModel()
 ) {
     val currentUser by viewModel.currentUser.collectAsState()
@@ -83,7 +85,8 @@ fun ProfileScreen(
             ) {
                 ProfileContent(
                     currentUser = currentUser,
-                    onNavigateToAlarms = onNavigateToAlarms
+                    onNavigateToAlarms = onNavigateToAlarms,
+                    onNavigateToMealSelection = onNavigateToMealSelection
                 )
             }
         }
@@ -164,7 +167,8 @@ private fun ModernProfileHeader(onNavigateBack: () -> Unit) {
 @Composable
 private fun ProfileContent(
     currentUser: User?,
-    onNavigateToAlarms: () -> Unit
+    onNavigateToAlarms: () -> Unit,
+    onNavigateToMealSelection: () -> Unit // ✅ AGREGAR ESTE PARÁMETRO
 ) {
     LazyColumn(
         modifier = Modifier.fillMaxSize(),
@@ -197,6 +201,19 @@ private fun ProfileContent(
             )
         }
 
+        // ✅ NUEVO ITEM: Selección de Menús
+        item {
+            ProfileMenuItem(
+                title = "Seleccionar Menús",
+                subtitle = "Personaliza qué quieres comer en cada horario",
+                icon = Icons.Default.RestaurantMenu,
+                iconColor = NutriGreen,
+                onClick = {
+                    onNavigateToMealSelection()
+                }
+            )
+        }
+
         item {
             ProfileMenuItem(
                 title = "Configurar Alarmas",
@@ -204,7 +221,6 @@ private fun ProfileContent(
                 icon = Icons.Default.Notifications,
                 iconColor = NutriOrange,
                 onClick = {
-                    // TODO: Navegar a configurar alarmas
                     onNavigateToAlarms()
                 }
             )

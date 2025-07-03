@@ -1,10 +1,9 @@
 package com.upao.nutrialarm.di
 
 import com.upao.nutrialarm.domain.repository.AlarmRepository
-import com.upao.nutrialarm.domain.usecase.alarm.CancelAlarmUseCase
-import com.upao.nutrialarm.domain.usecase.alarm.GetAlarmsUseCase
-import com.upao.nutrialarm.domain.usecase.alarm.SetAlarmUseCase
-import com.upao.nutrialarm.domain.usecase.alarm.ToggleAlarmUseCase
+import com.upao.nutrialarm.domain.repository.UserMealPreferenceRepository
+import com.upao.nutrialarm.domain.usecase.alarm.*
+import com.upao.nutrialarm.domain.usecase.meal.*
 import com.upao.nutrialarm.util.AlarmManagerUtil
 import dagger.Module
 import dagger.Provides
@@ -16,6 +15,7 @@ import javax.inject.Singleton
 @InstallIn(SingletonComponent::class)
 object UseCaseModule {
 
+    // ALARM USE CASES
     @Provides
     @Singleton
     fun provideSetAlarmUseCase(
@@ -49,5 +49,46 @@ object UseCaseModule {
         alarmManagerUtil: AlarmManagerUtil
     ): ToggleAlarmUseCase {
         return ToggleAlarmUseCase(alarmRepository, alarmManagerUtil)
+    }
+
+    // MEAL PREFERENCE USE CASES
+    @Provides
+    @Singleton
+    fun provideGetUserMealPreferencesUseCase(
+        repository: UserMealPreferenceRepository
+    ): GetUserMealPreferencesUseCase {
+        return GetUserMealPreferencesUseCase(repository)
+    }
+
+    @Provides
+    @Singleton
+    fun provideSaveUserMealPreferenceUseCase(
+        repository: UserMealPreferenceRepository
+    ): SaveUserMealPreferenceUseCase {
+        return SaveUserMealPreferenceUseCase(repository)
+    }
+
+    @Provides
+    @Singleton
+    fun provideGetUserMealPreferenceByTypeUseCase(
+        repository: UserMealPreferenceRepository
+    ): GetUserMealPreferenceByTypeUseCase {
+        return GetUserMealPreferenceByTypeUseCase(repository)
+    }
+
+    @Provides
+    @Singleton
+    fun provideDeleteUserMealPreferenceUseCase(
+        repository: UserMealPreferenceRepository
+    ): DeleteUserMealPreferenceUseCase {
+        return DeleteUserMealPreferenceUseCase(repository)
+    }
+
+    @Provides
+    @Singleton
+    fun provideInitializeDefaultPreferencesUseCase(
+        repository: UserMealPreferenceRepository
+    ): InitializeDefaultPreferencesUseCase {
+        return InitializeDefaultPreferencesUseCase(repository)
     }
 }

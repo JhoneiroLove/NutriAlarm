@@ -135,3 +135,32 @@ fun Alarm.toEntity(): AlarmEntity {
         createdAt = createdAt
     )
 }
+
+// UserMealPreference Extensions
+fun UserMealPreferenceEntity.toDomain(): UserMealPreference {
+    return UserMealPreference(
+        id = id,
+        userId = userId,
+        mealType = MealType.valueOf(mealType),
+        selectedMealId = selectedMealId,
+        timeSlot = timeSlot,
+        isActive = isActive,
+        reminderEnabled = reminderEnabled,
+        createdAt = createdAt,
+        updatedAt = updatedAt
+    )
+}
+
+fun UserMealPreference.toEntity(): UserMealPreferenceEntity {
+    return UserMealPreferenceEntity(
+        id = id,
+        userId = userId,
+        mealType = mealType.name,
+        selectedMealId = selectedMealId,
+        timeSlot = timeSlot,
+        isActive = isActive,
+        reminderEnabled = reminderEnabled,
+        createdAt = createdAt,
+        updatedAt = updatedAt
+    )
+}
