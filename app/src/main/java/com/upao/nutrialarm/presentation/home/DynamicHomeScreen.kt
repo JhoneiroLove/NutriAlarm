@@ -1,3 +1,4 @@
+
 package com.upao.nutrialarm.presentation.home
 
 import androidx.compose.animation.*
@@ -29,7 +30,6 @@ import com.upao.nutrialarm.domain.model.User
 import com.upao.nutrialarm.domain.usecase.meal.NextMealInfo
 import com.upao.nutrialarm.domain.usecase.meal.DailyProgress
 import com.upao.nutrialarm.domain.usecase.meal.ProgressItem
-import com.upao.nutrialarm.presentation.profile.UserProfileViewModel
 import com.upao.nutrialarm.ui.theme.*
 import kotlinx.coroutines.delay
 import java.text.SimpleDateFormat
@@ -40,13 +40,13 @@ import java.util.*
 fun DynamicHomeScreen(
     onNavigateToDiets: () -> Unit = {},
     onNavigateToProfile: () -> Unit = {},
-    userProfileViewModel: UserProfileViewModel = hiltViewModel(),
     homeViewModel: HomeViewModel = hiltViewModel()
 ) {
-    val currentUser by userProfileViewModel.currentUser.collectAsState()
+    val currentUser by homeViewModel.currentUser.collectAsState()
     val nextMealInfo by homeViewModel.nextMealInfo.collectAsState()
     val dailyProgress by homeViewModel.dailyProgress.collectAsState()
     val isLoading by homeViewModel.isLoading.collectAsState()
+    val message by homeViewModel.message.collectAsState()
 
     // Animaciones
     var headerVisible by remember { mutableStateOf(false) }
@@ -54,7 +54,14 @@ fun DynamicHomeScreen(
     var statsVisible by remember { mutableStateOf(false) }
     var menuVisible by remember { mutableStateOf(false) }
 
-    // Refresh automático cada minuto para actualizar la próxima comida
+    // Auto-clear messages después de 3 segundos
+    LaunchedEffect(message) {
+        if (message != null) {
+            delay(3000)
+            homeViewModel.clearMessage()
+        }
+    }
+
     LaunchedEffect(Unit) {
         headerVisible = true
         delay(200)
@@ -66,17 +73,9 @@ fun DynamicHomeScreen(
 
         // Actualizar cada minuto
         while (true) {
-            delay(60_000L) // 1 minuto
+            delay(60_000L)
             homeViewModel.refreshData()
         }
-    }
-
-    // Pull to refresh
-    var isRefreshing by remember { mutableStateOf(false) }
-    val refreshData = {
-        isRefreshing = true
-        homeViewModel.refreshData()
-        isRefreshing = false
     }
 
     Box(
@@ -106,8 +105,8 @@ fun DynamicHomeScreen(
                 ) {
                     DynamicHeaderSection(
                         currentUser = currentUser,
-                        onRefresh = refreshData,
-                        isRefreshing = isRefreshing
+                        onRefresh = { homeViewModel.refreshData() },
+                        isRefreshing = isLoading
                     )
                 }
             }
@@ -122,9 +121,7 @@ fun DynamicHomeScreen(
                 ) {
                     DynamicNextMealCard(
                         nextMealInfo = nextMealInfo,
-                        onMealConsumed = { mealId ->
-                            homeViewModel.markMealAsConsumed(mealId)
-                        },
+                        onMealConsumed = { homeViewModel.markMealAsConsumed() },
                         isLoading = isLoading
                     )
                 }
@@ -168,9 +165,19 @@ fun DynamicHomeScreen(
                     DynamicTipsSection(currentUser = currentUser)
                 }
             }
+
+            // Mostrar mensaje si existe
+            message?.let { msg ->
+                item {
+                    MessageCard(
+                        message = msg,
+                        onDismiss = { homeViewModel.clearMessage() }
+                    )
+                }
+            }
         }
 
-        // Loading overlay
+        // Loading overlay mejorado
         if (isLoading) {
             Box(
                 modifier = Modifier
@@ -178,10 +185,29 @@ fun DynamicHomeScreen(
                     .background(Color.Black.copy(alpha = 0.3f)),
                 contentAlignment = Alignment.Center
             ) {
-                CircularProgressIndicator(
-                    color = NutriGreen,
-                    strokeWidth = 3.dp
-                )
+                Card(
+                    colors = CardDefaults.cardColors(
+                        containerColor = Color.White
+                    ),
+                    shape = RoundedCornerShape(16.dp)
+                ) {
+                    Row(
+                        modifier = Modifier.padding(24.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        CircularProgressIndicator(
+                            color = NutriGreen,
+                            strokeWidth = 3.dp,
+                            modifier = Modifier.size(24.dp)
+                        )
+                        Spacer(modifier = Modifier.width(16.dp))
+                        Text(
+                            text = "Actualizando...",
+                            fontSize = 16.sp,
+                            color = NutriGrayDark
+                        )
+                    }
+                }
             }
         }
     }
@@ -250,22 +276,31 @@ private fun DynamicHeaderSection(
                         fontSize = 40.sp
                     )
 
-                    // Botón de refresh
+                    // Botón de refresh mejorado con tooltip
                     IconButton(
                         onClick = onRefresh,
+                        enabled = !isRefreshing,
                         modifier = Modifier
-                            .size(32.dp)
+                            .size(40.dp)
                             .background(
                                 Color.White.copy(alpha = 0.2f),
                                 shape = androidx.compose.foundation.shape.CircleShape
                             )
                     ) {
-                        Icon(
-                            Icons.Default.Refresh,
-                            contentDescription = "Actualizar",
-                            tint = Color.White,
-                            modifier = Modifier.size(16.dp)
-                        )
+                        if (isRefreshing) {
+                            CircularProgressIndicator(
+                                color = Color.White,
+                                strokeWidth = 2.dp,
+                                modifier = Modifier.size(16.dp)
+                            )
+                        } else {
+                            Icon(
+                                Icons.Default.Refresh,
+                                contentDescription = "Actualizar datos",
+                                tint = Color.White,
+                                modifier = Modifier.size(20.dp)
+                            )
+                        }
                     }
                 }
             }
@@ -277,7 +312,7 @@ private fun DynamicHeaderSection(
 @Composable
 private fun DynamicNextMealCard(
     nextMealInfo: NextMealInfo?,
-    onMealConsumed: (String) -> Unit,
+    onMealConsumed: () -> Unit,
     isLoading: Boolean
 ) {
     val cardColor = when (nextMealInfo?.mealType) {
@@ -369,27 +404,68 @@ private fun DynamicNextMealCard(
                         Spacer(modifier = Modifier.height(16.dp))
 
                         Button(
-                            onClick = {
-                                // Por ahora simulamos marcar como consumida
-                                onMealConsumed("mock_meal_id")
-                            },
+                            onClick = onMealConsumed,
+                            enabled = !isLoading,
                             colors = ButtonDefaults.buttonColors(
                                 containerColor = Color.White.copy(alpha = 0.9f),
-                                contentColor = cardColor
+                                contentColor = cardColor,
+                                disabledContainerColor = Color.White.copy(alpha = 0.5f),
+                                disabledContentColor = cardColor.copy(alpha = 0.5f)
                             ),
                             shape = RoundedCornerShape(12.dp),
                             modifier = Modifier.fillMaxWidth()
                         ) {
-                            Icon(
-                                Icons.Default.Check,
-                                contentDescription = null,
-                                modifier = Modifier.size(18.dp)
-                            )
-                            Spacer(modifier = Modifier.width(8.dp))
-                            Text(
-                                "Marcar como consumida",
-                                fontWeight = FontWeight.SemiBold
-                            )
+                            if (isLoading) {
+                                CircularProgressIndicator(
+                                    color = cardColor,
+                                    strokeWidth = 2.dp,
+                                    modifier = Modifier.size(18.dp)
+                                )
+                                Spacer(modifier = Modifier.width(8.dp))
+                                Text("Procesando...")
+                            } else {
+                                Icon(
+                                    Icons.Default.Check,
+                                    contentDescription = null,
+                                    modifier = Modifier.size(18.dp)
+                                )
+                                Spacer(modifier = Modifier.width(8.dp))
+                                Text(
+                                    "Marcar como consumida",
+                                    fontWeight = FontWeight.SemiBold
+                                )
+                            }
+                        }
+                    } else {
+                        Spacer(modifier = Modifier.height(16.dp))
+
+                        // Mostrar mensaje de completado
+                        Card(
+                            colors = CardDefaults.cardColors(
+                                containerColor = Color.White.copy(alpha = 0.2f)
+                            ),
+                            shape = RoundedCornerShape(12.dp)
+                        ) {
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(16.dp),
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.Center
+                            ) {
+                                Icon(
+                                    Icons.Default.CheckCircle,
+                                    contentDescription = null,
+                                    tint = Color.White,
+                                    modifier = Modifier.size(20.dp)
+                                )
+                                Spacer(modifier = Modifier.width(8.dp))
+                                Text(
+                                    "¡Ya consumiste esta comida!",
+                                    color = Color.White,
+                                    fontWeight = FontWeight.SemiBold
+                                )
+                            }
                         }
                     }
                 }
@@ -729,6 +805,50 @@ private fun ActionCard(
                         color = NutriGray
                     )
                 }
+            }
+        }
+    }
+}
+
+@Composable
+private fun MessageCard(
+    message: String,
+    onDismiss: () -> Unit
+) {
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        colors = CardDefaults.cardColors(
+            containerColor = NutriGreen.copy(alpha = 0.1f)
+        ),
+        shape = RoundedCornerShape(12.dp)
+    ) {
+        Row(
+            modifier = Modifier.padding(16.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Icon(
+                Icons.Default.CheckCircle,
+                contentDescription = null,
+                tint = NutriGreen,
+                modifier = Modifier.size(20.dp)
+            )
+            Spacer(modifier = Modifier.width(8.dp))
+            Text(
+                text = message,
+                color = NutriGreen,
+                fontSize = 14.sp,
+                modifier = Modifier.weight(1f)
+            )
+            IconButton(
+                onClick = onDismiss,
+                modifier = Modifier.size(24.dp)
+            ) {
+                Icon(
+                    Icons.Default.Close,
+                    contentDescription = "Cerrar",
+                    tint = NutriGreen,
+                    modifier = Modifier.size(16.dp)
+                )
             }
         }
     }

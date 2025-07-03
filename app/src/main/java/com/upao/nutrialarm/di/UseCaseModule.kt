@@ -6,6 +6,7 @@ import com.upao.nutrialarm.domain.repository.MealConsumptionRepository
 import com.upao.nutrialarm.domain.repository.UserRepository
 import com.upao.nutrialarm.domain.usecase.alarm.*
 import com.upao.nutrialarm.domain.usecase.meal.*
+import com.upao.nutrialarm.domain.usecase.user.GetCurrentUserUseCase
 import com.upao.nutrialarm.util.AlarmManagerUtil
 import dagger.Module
 import dagger.Provides
@@ -16,6 +17,15 @@ import javax.inject.Singleton
 @Module
 @InstallIn(SingletonComponent::class)
 object UseCaseModule {
+
+    // USER USE CASES
+    @Provides
+    @Singleton
+    fun provideGetCurrentUserUseCase(
+        userRepository: UserRepository
+    ): GetCurrentUserUseCase {
+        return GetCurrentUserUseCase(userRepository)
+    }
 
     // ALARM USE CASES
     @Provides
