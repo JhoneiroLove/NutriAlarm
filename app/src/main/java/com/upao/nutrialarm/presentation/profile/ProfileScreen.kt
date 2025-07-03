@@ -36,6 +36,7 @@ fun ProfileScreen(
     onNavigateBack: () -> Unit = {},
     onNavigateToAlarms: () -> Unit = {},
     onNavigateToMealSelection: () -> Unit = {},
+    onNavigateToSettings: () -> Unit = {},
     viewModel: UserProfileViewModel = hiltViewModel()
 ) {
     val currentUser by viewModel.currentUser.collectAsState()
@@ -86,7 +87,8 @@ fun ProfileScreen(
                 ProfileContent(
                     currentUser = currentUser,
                     onNavigateToAlarms = onNavigateToAlarms,
-                    onNavigateToMealSelection = onNavigateToMealSelection
+                    onNavigateToMealSelection = onNavigateToMealSelection,
+                    onNavigateToSettings = onNavigateToSettings
                 )
             }
         }
@@ -168,7 +170,8 @@ private fun ModernProfileHeader(onNavigateBack: () -> Unit) {
 private fun ProfileContent(
     currentUser: User?,
     onNavigateToAlarms: () -> Unit,
-    onNavigateToMealSelection: () -> Unit // ✅ AGREGAR ESTE PARÁMETRO
+    onNavigateToMealSelection: () -> Unit,
+    onNavigateToSettings: () -> Unit
 ) {
     LazyColumn(
         modifier = Modifier.fillMaxSize(),
@@ -201,7 +204,6 @@ private fun ProfileContent(
             )
         }
 
-        // ✅ NUEVO ITEM: Selección de Menús
         item {
             ProfileMenuItem(
                 title = "Seleccionar Menús",
@@ -240,12 +242,12 @@ private fun ProfileContent(
 
         item {
             ProfileMenuItem(
-                title = "Preferencias",
-                subtitle = "Notificaciones y configuración de la app",
+                title = "Configuración",
+                subtitle = "Notificaciones, tema y configuración de la app",
                 icon = Icons.Default.Settings,
                 iconColor = NutriGray,
                 onClick = {
-                    // TODO: Navegar a configuración
+                    onNavigateToSettings()
                 }
             )
         }

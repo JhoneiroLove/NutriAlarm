@@ -13,6 +13,8 @@ import androidx.compose.material3.Surface
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Modifier
 import androidx.navigation.compose.rememberNavController
+import com.upao.nutrialarm.data.local.database.DatabaseInitializer
+import com.upao.nutrialarm.data.local.preferences.PreferencesManager
 import com.upao.nutrialarm.domain.repository.DietRepository
 import com.upao.nutrialarm.presentation.navigation.NavigationGraph
 import com.upao.nutrialarm.ui.theme.NutriAlarmTheme
@@ -28,6 +30,12 @@ class MainActivity : ComponentActivity() {
 
     @Inject
     lateinit var permissionHelper: PermissionHelper
+
+    @Inject
+    lateinit var databaseInitializer: DatabaseInitializer
+
+    @Inject
+    lateinit var preferencesManager: PreferencesManager
 
     // Launcher para permisos de notificación
     private val notificationPermissionLauncher = registerForActivityResult(
@@ -55,9 +63,25 @@ class MainActivity : ComponentActivity() {
                 ) {
                     val navController = rememberNavController()
 
-                    // Inicializar datos una sola vez
                     LaunchedEffect(Unit) {
-                        dietRepository.initializePreloadedData()
+                        try {
+                            // Inicializar base de datos
+                            databaseInitializer.initializeDatabase()
+
+                            // Verificar integridad de datos
+                            val integrityResult = databaseInitializer.verifyDataIntegrity()
+                            Log.d("MainActivity", "Data integrity: ${integrityResult}")
+
+                            // Marcar que no es el primer lanzamiento si los datos están OK
+                            if (integrityResult.isValid) {
+                                preferencesManager.isFirstLaunch = false
+                            }
+
+                        } catch (e: Exception) {
+                            Log.e("MainActivity", "Error during initialization", e)
+                            // Fallback: usar el método anterior
+                            dietRepository.initializePreloadedData()
+                        }
                     }
 
                     NavigationGraph(navController = navController)

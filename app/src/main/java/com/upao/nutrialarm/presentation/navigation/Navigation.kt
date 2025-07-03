@@ -14,6 +14,7 @@ import com.upao.nutrialarm.presentation.meal.MealSelectionScreen
 import com.upao.nutrialarm.presentation.home.HomeScreen
 import com.upao.nutrialarm.presentation.profile.ProfileScreen
 import com.upao.nutrialarm.presentation.alarm.AlarmConfigScreen
+import com.upao.nutrialarm.presentation.settings.SettingsScreen
 
 @Composable
 fun NavigationGraph(
@@ -23,6 +24,9 @@ fun NavigationGraph(
         navController = navController,
         startDestination = "login"
     ) {
+        // ========================================
+        // AUTENTICACIÓN
+        // ========================================
         composable("login") {
             LoginScreen(
                 onNavigateToHome = {
@@ -49,6 +53,9 @@ fun NavigationGraph(
             )
         }
 
+        // ========================================
+        // PANTALLA PRINCIPAL
+        // ========================================
         composable("home") {
             HomeScreen(
                 onNavigateToDiets = {
@@ -60,6 +67,9 @@ fun NavigationGraph(
             )
         }
 
+        // ========================================
+        // DIETAS Y COMIDAS
+        // ========================================
         composable("diets") {
             DietListScreen(
                 onNavigateBack = {
@@ -94,7 +104,9 @@ fun NavigationGraph(
             )
         }
 
-        // Selección de menús personalizados
+        // ========================================
+        // SELECCIÓN PERSONALIZADA DE MENÚS
+        // ========================================
         composable("meal_selection") {
             MealSelectionScreen(
                 onNavigateBack = {
@@ -106,6 +118,9 @@ fun NavigationGraph(
             )
         }
 
+        // ========================================
+        // PERFIL Y CONFIGURACIÓN
+        // ========================================
         composable("profile") {
             ProfileScreen(
                 onNavigateBack = {
@@ -116,16 +131,73 @@ fun NavigationGraph(
                 },
                 onNavigateToMealSelection = {
                     navController.navigate("meal_selection")
+                },
+                onNavigateToSettings = {
+                    navController.navigate("settings")
                 }
             )
         }
 
+        // ========================================
+        // ALARMAS
+        // ========================================
         composable("alarms") {
             AlarmConfigScreen(
                 onNavigateBack = {
                     navController.popBackStack()
                 }
             )
+        }
+
+        // ========================================
+        // CONFIGURACIÓN
+        // ========================================
+        composable("settings") {
+            SettingsScreen(
+                onNavigateBack = {
+                    navController.popBackStack()
+                }
+            )
+        }
+
+        // ========================================
+        // RUTAS FUTURAS (PREPARADAS)
+        // ========================================
+
+        // Edición de perfil
+        composable("edit_profile") {
+            // TODO: Implementar EditProfileScreen
+            // EditProfileScreen(
+            //     onNavigateBack = { navController.popBackStack() }
+            // )
+        }
+
+        // Estadísticas nutricionales
+        composable("nutrition_stats") {
+            // TODO: Implementar NutritionStatsScreen
+            // NutritionStatsScreen(
+            //     onNavigateBack = { navController.popBackStack() }
+            // )
+        }
+
+        // Historial de comidas
+        composable("meal_history") {
+            // TODO: Implementar MealHistoryScreen
+            // MealHistoryScreen(
+            //     onNavigateBack = { navController.popBackStack() }
+            // )
+        }
+
+        // Onboarding (para nuevos usuarios)
+        composable("onboarding") {
+            // TODO: Implementar OnboardingScreen
+            // OnboardingScreen(
+            //     onComplete = {
+            //         navController.navigate("home") {
+            //             popUpTo("onboarding") { inclusive = true }
+            //         }
+            //     }
+            // )
         }
     }
 }

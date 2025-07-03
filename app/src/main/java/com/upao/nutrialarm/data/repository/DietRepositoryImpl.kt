@@ -1,5 +1,7 @@
 package com.upao.nutrialarm.data.repository
 
+import android.util.Log
+import com.upao.nutrialarm.data.local.database.DatabaseInitializer
 import com.upao.nutrialarm.data.local.database.dao.DietDao
 import com.upao.nutrialarm.data.local.database.dao.MealDao
 import com.upao.nutrialarm.data.local.database.PreloadedData
@@ -45,8 +47,20 @@ class DietRepositoryImpl @Inject constructor(
         return mealDao.getMealById(mealId)?.toDomain()
     }
 
-    // USAR EL PRELOADEDDATA EXISTENTE - SIN DUPLICAR
+    @Inject
+    lateinit var databaseInitializer: DatabaseInitializer
+
     override suspend fun initializePreloadedData() {
+        try {
+            databaseInitializer.initializeDatabase()
+        } catch (e: Exception) {
+            Log.e("DietRepositoryImpl", "Error initializing preloaded data", e)
+            // Fallback al método anterior si el nuevo falla
+            initializePreloadedDataFallback()
+        }
+    }
+
+    private suspend fun initializePreloadedDataFallback() {
         // Verificar si ya hay datos
         val existingMeals = mealDao.getMealsByType(MealType.BREAKFAST.name)
         if (existingMeals.isNotEmpty()) return
