@@ -93,9 +93,8 @@ fun LoginScreen(
                 .padding(24.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            Spacer(modifier = Modifier.height(120.dp)) // Más espacio para evitar el notch
+            Spacer(modifier = Modifier.height(120.dp))
 
-            // Logo animado
             AnimatedVisibility(
                 visible = logoVisible,
                 enter = fadeIn(animationSpec = tween(800)) + scaleIn(
@@ -169,7 +168,6 @@ private fun LogoSection() {
     Column(
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        // Logo principal con sombra y gradiente
         Card(
             modifier = Modifier.size(120.dp),
             shape = RoundedCornerShape(30.dp),
@@ -184,7 +182,7 @@ private fun LogoSection() {
                     .background(
                         brush = Brush.radialGradient(
                             colors = listOf(
-                                Color(0xFFFFEBEE),
+                                Color(0xFFFFE5E5),
                                 Color.White
                             )
                         )
@@ -192,7 +190,7 @@ private fun LogoSection() {
                 contentAlignment = Alignment.Center
             ) {
                 Text(
-                    text = "🍎",
+                    text = "🍓",
                     fontSize = 60.sp,
                     modifier = Modifier.scale(1.2f)
                 )

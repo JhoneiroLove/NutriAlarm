@@ -272,11 +272,13 @@ private fun DynamicHeaderSection(
 
                 Column(horizontalAlignment = Alignment.End) {
                     Text(
-                        text = "🍎",
-                        fontSize = 40.sp
+                        text = "🩸",
+                        fontSize = 32.sp
                     )
 
-                    // Botón de refresh mejorado con tooltip
+                    Spacer(modifier = Modifier.height(8.dp))
+
+                    // Botón de refresh mejorado
                     IconButton(
                         onClick = onRefresh,
                         enabled = !isRefreshing,
@@ -307,7 +309,6 @@ private fun DynamicHeaderSection(
         }
     }
 }
-
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun DynamicNextMealCard(
