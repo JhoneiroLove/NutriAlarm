@@ -4,9 +4,10 @@ import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.upao.nutrialarm.data.local.preferences.PreferencesManager
-import com.upao.nutrialarm.data.local.preferences.getDailyIronBonus
-import com.upao.nutrialarm.data.local.preferences.saveDailyIronBonus
-import com.upao.nutrialarm.data.local.preferences.cleanupOldIronBonuses
+import com.upao.nutrialarm.data.local.preferences.cleanupCorruptedIronBonusData
+import com.upao.nutrialarm.data.local.preferences.getDailyIronBonusAmount
+import com.upao.nutrialarm.data.local.preferences.saveDailyIronBonusAmount
+import com.upao.nutrialarm.data.local.preferences.cleanupOldIronBonusesData
 import com.upao.nutrialarm.domain.usecase.meal.GetNextMealUseCase
 import com.upao.nutrialarm.domain.usecase.meal.GetDailyProgressUseCase
 import com.upao.nutrialarm.domain.usecase.meal.NextMealInfo
@@ -17,6 +18,7 @@ import com.upao.nutrialarm.domain.repository.DietRepository
 import com.upao.nutrialarm.domain.model.User
 import com.upao.nutrialarm.domain.model.MealConsumption
 import com.upao.nutrialarm.domain.model.MealType
+import com.upao.nutrialarm.domain.model.Meal
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
@@ -53,6 +55,16 @@ class HomeViewModel @Inject constructor(
 
     private val _dailyIronBonus = MutableStateFlow(0.0)
     val dailyIronBonus: StateFlow<Double> = _dailyIronBonus.asStateFlow()
+
+    // Estados para el selector de comidas
+    private val _showMealSelector = MutableStateFlow(false)
+    val showMealSelector: StateFlow<Boolean> = _showMealSelector.asStateFlow()
+
+    private val _availableMealsForType = MutableStateFlow<List<Meal>>(emptyList())
+    val availableMealsForType: StateFlow<List<Meal>> = _availableMealsForType.asStateFlow()
+
+    private val _selectedMealType = MutableStateFlow<MealType?>(null)
+    val selectedMealType: StateFlow<MealType?> = _selectedMealType.asStateFlow()
 
     // Exponer el usuario actual como StateFlow
     val currentUser: StateFlow<User?> = userRepository.getCurrentUserFlow()
@@ -109,9 +121,74 @@ class HomeViewModel @Inject constructor(
     fun refreshData() {
         _message.value = "Actualizando datos..."
         loadHomeData()
-        loadDailyIronBonus() // AGREGADO SOLO ESTO
+        loadDailyIronBonus()
     }
 
+    // Función para mostrar selector de comidas
+    fun showMealSelector() {
+        viewModelScope.launch {
+            val nextMeal = _nextMealInfo.value
+            if (nextMeal != null) {
+                _selectedMealType.value = nextMeal.mealType
+
+                // Cargar comidas disponibles para este tipo
+                val availableMeals = dietRepository.getMealsByType(nextMeal.mealType)
+                _availableMealsForType.value = availableMeals
+
+                _showMealSelector.value = true
+            }
+        }
+    }
+
+    // Función para marcar comida específica como consumida
+    fun markSpecificMealAsConsumed(meal: Meal) {
+        viewModelScope.launch {
+            try {
+                val currentUserValue = userRepository.getCurrentUser()
+
+                if (currentUserValue != null) {
+                    // Crear registro de consumo
+                    val today = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(Date())
+                    val consumption = MealConsumption(
+                        id = "${currentUserValue.id}_${meal.id}_${System.currentTimeMillis()}",
+                        userId = currentUserValue.id,
+                        mealId = meal.id,
+                        mealType = meal.mealType,
+                        date = today,
+                        ironContent = meal.ironContent,
+                        calories = meal.calories,
+                        vitaminC = meal.vitaminC,
+                        folate = meal.folate,
+                        consumedAt = System.currentTimeMillis()
+                    )
+
+                    // Guardar consumo
+                    val result = mealConsumptionRepository.insertMealConsumption(consumption)
+
+                    result.fold(
+                        onSuccess = {
+                            _message.value = "¡${meal.name} marcada como consumida! ✅"
+                            _showMealSelector.value = false
+
+                            // Recargar datos para actualizar progreso y próxima comida
+                            loadHomeData()
+                        },
+                        onFailure = { exception ->
+                            _message.value = "Error al marcar como consumida: ${exception.message}"
+                        }
+                    )
+                }
+            } catch (e: Exception) {
+                _message.value = "Error inesperado: ${e.message}"
+            }
+        }
+    }
+
+    fun hideMealSelector() {
+        _showMealSelector.value = false
+    }
+
+    // Función original para marcar comida rápida (mantener compatibilidad)
     fun markMealAsConsumed() {
         viewModelScope.launch {
             try {
@@ -124,35 +201,7 @@ class HomeViewModel @Inject constructor(
                     val mealToConsume = availableMeals.firstOrNull()
 
                     if (mealToConsume != null) {
-                        // Crear registro de consumo
-                        val today = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(Date())
-                        val consumption = MealConsumption(
-                            id = "${currentUserValue.id}_${mealToConsume.id}_${System.currentTimeMillis()}",
-                            userId = currentUserValue.id,
-                            mealId = mealToConsume.id,
-                            mealType = nextMeal.mealType,
-                            date = today,
-                            ironContent = mealToConsume.ironContent,
-                            calories = mealToConsume.calories,
-                            vitaminC = mealToConsume.vitaminC,
-                            folate = mealToConsume.folate,
-                            consumedAt = System.currentTimeMillis()
-                        )
-
-                        // Guardar consumo
-                        val result = mealConsumptionRepository.insertMealConsumption(consumption)
-
-                        result.fold(
-                            onSuccess = {
-                                _message.value = "¡${getMealDisplayName(nextMeal.mealType)} marcada como consumida! ✅"
-
-                                // Recargar datos para actualizar progreso y próxima comida
-                                loadHomeData()
-                            },
-                            onFailure = { exception ->
-                                _message.value = "Error al marcar como consumida: ${exception.message}"
-                            }
-                        )
+                        markSpecificMealAsConsumed(mealToConsume)
                     } else {
                         _message.value = "No se encontró una comida para ${getMealDisplayName(nextMeal.mealType)}"
                     }
@@ -180,19 +229,15 @@ class HomeViewModel @Inject constructor(
         }
     }
 
-    // ===== FUNCIONES AGREGADAS SOLO PARA ADMOB =====
-
-    /**
-     * Función para agregar bonus de hierro desde anuncios con recompensa
-     */
+    // Funciones para AdMob con extensiones corregidas
     fun addIronBonus(bonusAmount: Double = REWARDED_AD_IRON_BONUS) {
         viewModelScope.launch {
             try {
                 val newBonus = _dailyIronBonus.value + bonusAmount
                 _dailyIronBonus.value = newBonus
 
-                // Guardar en preferencias
-                preferencesManager.saveDailyIronBonus(newBonus)
+                // Guardar en preferencias con función corregida
+                preferencesManager.saveDailyIronBonusAmount(newBonus)
 
                 // Actualizar el progreso inmediatamente
                 loadHomeData()
@@ -210,13 +255,13 @@ class HomeViewModel @Inject constructor(
     private fun loadDailyIronBonus() {
         viewModelScope.launch {
             try {
-                val savedBonus = preferencesManager.getDailyIronBonus()
+                val savedBonus = preferencesManager.getDailyIronBonusAmount()
                 _dailyIronBonus.value = savedBonus
 
                 Log.d(TAG, "Loaded daily iron bonus: ${savedBonus}mg")
 
                 // Limpiar bonus antiguos periódicamente
-                preferencesManager.cleanupOldIronBonuses()
+                preferencesManager.cleanupOldIronBonusesData()
             } catch (e: Exception) {
                 Log.e(TAG, "Error loading daily iron bonus", e)
                 _dailyIronBonus.value = 0.0
@@ -224,17 +269,26 @@ class HomeViewModel @Inject constructor(
         }
     }
 
-    /**
-     * Función para resetear el bonus diario (útil para testing)
-     */
     fun resetDailyIronBonus() {
         viewModelScope.launch {
             _dailyIronBonus.value = 0.0
-            preferencesManager.saveDailyIronBonus(0.0)
+            preferencesManager.saveDailyIronBonusAmount(0.0)
 
             loadHomeData()
             _message.value = "Bonus de hierro diario reseteado"
             Log.d(TAG, "Daily iron bonus reset to 0.0mg")
+        }
+    }
+
+    fun cleanupCorruptedData() {
+        viewModelScope.launch {
+            try {
+                preferencesManager.cleanupCorruptedIronBonusData()
+                loadDailyIronBonus() // Recargar después de limpiar
+                _message.value = "Datos corruptos limpiados correctamente"
+            } catch (e: Exception) {
+                Log.e(TAG, "Error cleaning corrupted data", e)
+            }
         }
     }
 }

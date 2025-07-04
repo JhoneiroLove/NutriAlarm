@@ -32,6 +32,7 @@ import com.upao.nutrialarm.domain.usecase.meal.NextMealInfo
 import com.upao.nutrialarm.domain.usecase.meal.DailyProgress
 import com.upao.nutrialarm.domain.usecase.meal.ProgressItem
 import com.upao.nutrialarm.presentation.component.BannerAdView
+import com.upao.nutrialarm.presentation.component.MealSelectorDialog
 import com.upao.nutrialarm.presentation.admob.rememberAdMobHelper
 import com.upao.nutrialarm.ui.theme.*
 import kotlinx.coroutines.delay
@@ -43,6 +44,7 @@ import java.util.*
 fun DynamicHomeScreen(
     onNavigateToDiets: () -> Unit = {},
     onNavigateToProfile: () -> Unit = {},
+    onNavigateToHistory: () -> Unit = {},
     homeViewModel: HomeViewModel = hiltViewModel()
 ) {
     val currentUser by homeViewModel.currentUser.collectAsState()
@@ -50,6 +52,10 @@ fun DynamicHomeScreen(
     val dailyProgress by homeViewModel.dailyProgress.collectAsState()
     val isLoading by homeViewModel.isLoading.collectAsState()
     val message by homeViewModel.message.collectAsState()
+
+    val showMealSelector by homeViewModel.showMealSelector.collectAsState()
+    val availableMeals by homeViewModel.availableMealsForType.collectAsState()
+    val selectedMealType by homeViewModel.selectedMealType.collectAsState()
 
     // AdMob integration
     val adMobHelper = rememberAdMobHelper()
@@ -149,8 +155,10 @@ fun DynamicHomeScreen(
                     DynamicNextMealCard(
                         nextMealInfo = nextMealInfo,
                         onMealConsumed = {
+                            homeViewModel.showMealSelector()
+                        },
+                        onQuickMark = {
                             homeViewModel.markMealAsConsumed()
-                            // Mostrar intersticial después de marcar comida
                             if (context is android.app.Activity) {
                                 adMobHelper?.tryShowInterstitialAd(context)
                             }
@@ -170,7 +178,8 @@ fun DynamicHomeScreen(
                 ) {
                     DynamicProgressSection(
                         dailyProgress = dailyProgress,
-                        isLoading = isLoading
+                        isLoading = isLoading,
+                        onViewHistory = onNavigateToHistory
                     )
                 }
             }
@@ -200,14 +209,18 @@ fun DynamicHomeScreen(
                     QuickActionsSection(
                         onNavigateToDiets = {
                             onNavigateToDiets()
-                            // Mostrar intersticial al navegar
                             if (context is android.app.Activity) {
                                 adMobHelper?.tryShowInterstitialAd(context)
                             }
                         },
                         onNavigateToProfile = {
                             onNavigateToProfile()
-                            // Mostrar intersticial al navegar
+                            if (context is android.app.Activity) {
+                                adMobHelper?.tryShowInterstitialAd(context)
+                            }
+                        },
+                        onNavigateToHistory = {
+                            onNavigateToHistory()
                             if (context is android.app.Activity) {
                                 adMobHelper?.tryShowInterstitialAd(context)
                             }
@@ -282,6 +295,22 @@ fun DynamicHomeScreen(
                 }
             }
         }
+    }
+
+    if (showMealSelector && selectedMealType != null) {
+        MealSelectorDialog(
+            mealType = selectedMealType!!,
+            availableMeals = availableMeals,
+            onMealSelected = { meal ->
+                homeViewModel.markSpecificMealAsConsumed(meal)
+                if (context is android.app.Activity) {
+                    adMobHelper?.tryShowInterstitialAd(context)
+                }
+            },
+            onDismiss = {
+                homeViewModel.hideMealSelector()
+            }
+        )
     }
 
     // Dialog para confirmar ver anuncio con recompensa
@@ -495,7 +524,6 @@ private fun DynamicHeaderSection(
 
                     Spacer(modifier = Modifier.height(8.dp))
 
-                    // Botón de refresh mejorado
                     IconButton(
                         onClick = onRefresh,
                         enabled = !isRefreshing,
@@ -526,11 +554,13 @@ private fun DynamicHeaderSection(
         }
     }
 }
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun DynamicNextMealCard(
     nextMealInfo: NextMealInfo?,
     onMealConsumed: () -> Unit,
+    onQuickMark: () -> Unit,
     isLoading: Boolean
 ) {
     val cardColor = when (nextMealInfo?.mealType) {
@@ -621,36 +651,64 @@ private fun DynamicNextMealCard(
                     if (!nextMealInfo.hasBeenConsumed) {
                         Spacer(modifier = Modifier.height(16.dp))
 
-                        Button(
-                            onClick = onMealConsumed,
-                            enabled = !isLoading,
-                            colors = ButtonDefaults.buttonColors(
-                                containerColor = Color.White.copy(alpha = 0.9f),
-                                contentColor = cardColor,
-                                disabledContainerColor = Color.White.copy(alpha = 0.5f),
-                                disabledContentColor = cardColor.copy(alpha = 0.5f)
-                            ),
-                            shape = RoundedCornerShape(12.dp),
-                            modifier = Modifier.fillMaxWidth()
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.spacedBy(8.dp)
                         ) {
-                            if (isLoading) {
-                                CircularProgressIndicator(
-                                    color = cardColor,
-                                    strokeWidth = 2.dp,
-                                    modifier = Modifier.size(18.dp)
-                                )
-                                Spacer(modifier = Modifier.width(8.dp))
-                                Text("Procesando...")
-                            } else {
+                            // Botón principal - Elegir comida específica
+                            Button(
+                                onClick = onMealConsumed,
+                                enabled = !isLoading,
+                                colors = ButtonDefaults.buttonColors(
+                                    containerColor = Color.White.copy(alpha = 0.9f),
+                                    contentColor = cardColor,
+                                    disabledContainerColor = Color.White.copy(alpha = 0.5f),
+                                    disabledContentColor = cardColor.copy(alpha = 0.5f)
+                                ),
+                                shape = RoundedCornerShape(12.dp),
+                                modifier = Modifier.weight(1f)
+                            ) {
+                                if (isLoading) {
+                                    CircularProgressIndicator(
+                                        color = cardColor,
+                                        strokeWidth = 2.dp,
+                                        modifier = Modifier.size(18.dp)
+                                    )
+                                } else {
+                                    Icon(
+                                        Icons.Default.Restaurant,
+                                        contentDescription = null,
+                                        modifier = Modifier.size(18.dp)
+                                    )
+                                    Spacer(modifier = Modifier.width(8.dp))
+                                    Text(
+                                        "Elegir comida",
+                                        fontWeight = FontWeight.SemiBold,
+                                        fontSize = 14.sp
+                                    )
+                                }
+                            }
+
+                            // Botón secundario - Marcado rápido
+                            OutlinedButton(
+                                onClick = onQuickMark,
+                                enabled = !isLoading,
+                                colors = ButtonDefaults.outlinedButtonColors(
+                                    contentColor = Color.White
+                                ),
+                                border = androidx.compose.foundation.BorderStroke(2.dp, Color.White.copy(alpha = 0.7f)),
+                                shape = RoundedCornerShape(12.dp)
+                            ) {
                                 Icon(
                                     Icons.Default.Check,
                                     contentDescription = null,
-                                    modifier = Modifier.size(18.dp)
+                                    modifier = Modifier.size(16.dp)
                                 )
-                                Spacer(modifier = Modifier.width(8.dp))
+                                Spacer(modifier = Modifier.width(4.dp))
                                 Text(
-                                    "Marcar como consumida",
-                                    fontWeight = FontWeight.SemiBold
+                                    "Rápido",
+                                    fontWeight = FontWeight.SemiBold,
+                                    fontSize = 12.sp
                                 )
                             }
                         }
@@ -713,7 +771,8 @@ private fun DynamicNextMealCard(
 @Composable
 private fun DynamicProgressSection(
     dailyProgress: DailyProgress?,
-    isLoading: Boolean
+    isLoading: Boolean,
+    onViewHistory: () -> Unit
 ) {
     Card(
         modifier = Modifier.fillMaxWidth(),
@@ -738,11 +797,24 @@ private fun DynamicProgressSection(
                     color = NutriGrayDark
                 )
 
-                Text(
-                    text = SimpleDateFormat("dd/MM", Locale.getDefault()).format(Date()),
-                    fontSize = 12.sp,
-                    color = NutriGray
-                )
+                TextButton(
+                    onClick = onViewHistory,
+                    colors = ButtonDefaults.textButtonColors(
+                        contentColor = NutriBlue
+                    )
+                ) {
+                    Text(
+                        text = "Ver historial",
+                        fontSize = 12.sp,
+                        fontWeight = FontWeight.Medium
+                    )
+                    Spacer(modifier = Modifier.width(4.dp))
+                    Icon(
+                        Icons.Default.History,
+                        contentDescription = null,
+                        modifier = Modifier.size(16.dp)
+                    )
+                }
             }
 
             Spacer(modifier = Modifier.height(16.dp))
@@ -863,7 +935,6 @@ private fun DynamicProgressCard(progressItem: ProgressItem) {
                 )
             }
 
-            // Barra de progreso
             Spacer(modifier = Modifier.height(4.dp))
 
             LinearProgressIndicator(
@@ -927,7 +998,8 @@ private fun DynamicTipsSection(currentUser: User?) {
 @Composable
 private fun QuickActionsSection(
     onNavigateToDiets: () -> Unit,
-    onNavigateToProfile: () -> Unit
+    onNavigateToProfile: () -> Unit,
+    onNavigateToHistory: () -> Unit
 ) {
     Column {
         Text(
@@ -940,6 +1012,7 @@ private fun QuickActionsSection(
 
         Spacer(modifier = Modifier.height(12.dp))
 
+        // Primera fila
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.spacedBy(12.dp)
@@ -962,8 +1035,29 @@ private fun QuickActionsSection(
                 onClick = onNavigateToProfile
             )
         }
+
+        Spacer(modifier = Modifier.height(12.dp))
+
+        // Segunda fila - NUEVO
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(12.dp)
+        ) {
+            ActionCard(
+                modifier = Modifier.weight(1f),
+                title = "Historial",
+                subtitle = "Ver comidas consumidas",
+                icon = Icons.Default.History,
+                color = Color(0xFF8B5CF6),
+                onClick = onNavigateToHistory
+            )
+
+            // Espacio para mantener simetría o agregar otra acción
+            Spacer(modifier = Modifier.weight(1f))
+        }
     }
 }
+
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable

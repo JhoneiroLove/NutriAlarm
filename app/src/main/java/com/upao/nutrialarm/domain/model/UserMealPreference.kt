@@ -1,11 +1,11 @@
 package com.upao.nutrialarm.domain.model
 
 data class UserMealPreference(
-    val id: String = "",
-    val userId: String = "",
-    val mealType: MealType = MealType.BREAKFAST,
-    val selectedMealId: String = "",
-    val timeSlot: String = "",
+    val id: String,
+    val userId: String,
+    val mealType: MealType,
+    val selectedMealId: String,
+    val timeSlot: String, // "06:30"
     val isActive: Boolean = true,
     val reminderEnabled: Boolean = true,
     val createdAt: Long = System.currentTimeMillis(),

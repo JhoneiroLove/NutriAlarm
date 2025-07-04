@@ -26,6 +26,7 @@ import com.upao.nutrialarm.presentation.home.DynamicHomeScreen
 import com.upao.nutrialarm.presentation.profile.ProfileScreen
 import com.upao.nutrialarm.presentation.alarm.AlarmConfigScreen
 import com.upao.nutrialarm.presentation.settings.SettingsScreen
+import com.upao.nutrialarm.presentation.history.ConsumptionHistoryScreen
 import androidx.hilt.navigation.compose.hiltViewModel
 
 @Composable
@@ -89,6 +90,9 @@ fun NavigationGraph(
                 },
                 onNavigateToProfile = {
                     navController.navigate("profile")
+                },
+                onNavigateToHistory = {
+                    navController.navigate("history")
                 }
             )
         }
@@ -172,6 +176,15 @@ fun NavigationGraph(
         composable("settings") {
             SettingsScreen(
                 onNavigateBack = {
+                    navController.popBackStack()
+                }
+            )
+        }
+
+        // Historial de consumo
+        composable("history") {
+            ConsumptionHistoryScreen(
+                onBackPressed = {
                     navController.popBackStack()
                 }
             )
