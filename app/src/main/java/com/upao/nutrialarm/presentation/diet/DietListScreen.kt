@@ -16,6 +16,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
@@ -24,6 +25,8 @@ import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.upao.nutrialarm.domain.model.AnemiaRisk
 import com.upao.nutrialarm.domain.model.Diet
+import com.upao.nutrialarm.presentation.component.BannerAdView
+import com.upao.nutrialarm.presentation.admob.rememberAdMobHelper
 import com.upao.nutrialarm.ui.theme.*
 import kotlinx.coroutines.delay
 
@@ -37,6 +40,10 @@ fun DietListScreen(
     val diets by viewModel.diets.collectAsState()
     val isLoading by viewModel.isLoading.collectAsState()
     val error by viewModel.error.collectAsState()
+
+    // AdMob integration
+    val adMobHelper = rememberAdMobHelper()
+    val context = LocalContext.current
 
     // Animaciones
     var headerVisible by remember { mutableStateOf(false) }
@@ -95,7 +102,14 @@ fun DietListScreen(
                     else -> {
                         DietContent(
                             diets = diets,
-                            onDietClick = onDietClick
+                            adMobHelper = adMobHelper,
+                            onDietClick = { dietId ->
+                                onDietClick(dietId)
+                                // Mostrar intersticial al seleccionar dieta
+                                if (context is android.app.Activity) {
+                                    adMobHelper?.tryShowInterstitialAd(context)
+                                }
+                            }
                         )
                     }
                 }
@@ -260,6 +274,7 @@ private fun ErrorContent(
 @Composable
 private fun DietContent(
     diets: List<Diet>,
+    adMobHelper: com.upao.nutrialarm.presentation.admob.AdMobIntegrationHelper?,
     onDietClick: (String) -> Unit
 ) {
     LazyColumn(
@@ -271,12 +286,28 @@ private fun DietContent(
             InfoCard()
         }
 
+        // Banner Ad después de la info
+        item {
+            BannerAdView(
+                modifier = Modifier.padding(vertical = 8.dp),
+                adMobService = adMobHelper?.getAdMobService()
+            )
+        }
+
         if (diets.isEmpty()) {
             item {
                 EmptyStateCard()
             }
         } else {
             itemsIndexed(diets) { index, diet ->
+                // Mostrar banner ad cada 3 dietas
+                if (index > 0 && index % 3 == 0) {
+                    BannerAdView(
+                        modifier = Modifier.padding(vertical = 8.dp),
+                        adMobService = adMobHelper?.getAdMobService()
+                    )
+                }
+
                 AnimatedVisibility(
                     visible = true,
                     enter = fadeIn(
@@ -294,10 +325,18 @@ private fun DietContent(
                 ) {
                     ModernDietCard(
                         diet = diet,
-                        onClick = { onDietClick(diet.id) } // USAR LA FUNCIÓN DE NAVEGACIÓN
+                        onClick = { onDietClick(diet.id) }
                     )
                 }
             }
+        }
+
+        // Banner Ad final
+        item {
+            BannerAdView(
+                modifier = Modifier.padding(vertical = 16.dp),
+                adMobService = adMobHelper?.getAdMobService()
+            )
         }
     }
 }

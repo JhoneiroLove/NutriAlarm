@@ -19,6 +19,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
@@ -30,6 +31,8 @@ import com.upao.nutrialarm.domain.model.User
 import com.upao.nutrialarm.domain.usecase.meal.NextMealInfo
 import com.upao.nutrialarm.domain.usecase.meal.DailyProgress
 import com.upao.nutrialarm.domain.usecase.meal.ProgressItem
+import com.upao.nutrialarm.presentation.component.BannerAdView
+import com.upao.nutrialarm.presentation.admob.rememberAdMobHelper
 import com.upao.nutrialarm.ui.theme.*
 import kotlinx.coroutines.delay
 import java.text.SimpleDateFormat
@@ -47,6 +50,11 @@ fun DynamicHomeScreen(
     val dailyProgress by homeViewModel.dailyProgress.collectAsState()
     val isLoading by homeViewModel.isLoading.collectAsState()
     val message by homeViewModel.message.collectAsState()
+
+    // AdMob integration
+    val adMobHelper = rememberAdMobHelper()
+    val context = LocalContext.current
+    var showRewardDialog by remember { mutableStateOf(false) }
 
     // Animaciones
     var headerVisible by remember { mutableStateOf(false) }
@@ -93,7 +101,7 @@ fun DynamicHomeScreen(
         LazyColumn(
             modifier = Modifier.fillMaxSize(),
             contentPadding = PaddingValues(top = 24.dp, start = 16.dp, end = 16.dp, bottom = 16.dp),
-            verticalArrangement = Arrangement.spacedBy(24.dp)
+            verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
             item {
                 AnimatedVisibility(
@@ -105,8 +113,27 @@ fun DynamicHomeScreen(
                 ) {
                     DynamicHeaderSection(
                         currentUser = currentUser,
-                        onRefresh = { homeViewModel.refreshData() },
+                        onRefresh = {
+                            homeViewModel.refreshData()
+                            // Mostrar intersticial después de varias acciones
+                            if (context is android.app.Activity) {
+                                adMobHelper?.tryShowInterstitialAd(context)
+                            }
+                        },
                         isRefreshing = isLoading
+                    )
+                }
+            }
+
+            // Banner Ad después del header
+            item {
+                AnimatedVisibility(
+                    visible = headerVisible,
+                    enter = fadeIn(animationSpec = tween(800))
+                ) {
+                    BannerAdView(
+                        modifier = Modifier.padding(vertical = 8.dp),
+                        adMobService = adMobHelper?.getAdMobService()
                     )
                 }
             }
@@ -121,7 +148,13 @@ fun DynamicHomeScreen(
                 ) {
                     DynamicNextMealCard(
                         nextMealInfo = nextMealInfo,
-                        onMealConsumed = { homeViewModel.markMealAsConsumed() },
+                        onMealConsumed = {
+                            homeViewModel.markMealAsConsumed()
+                            // Mostrar intersticial después de marcar comida
+                            if (context is android.app.Activity) {
+                                adMobHelper?.tryShowInterstitialAd(context)
+                            }
+                        },
                         isLoading = isLoading
                     )
                 }
@@ -142,6 +175,20 @@ fun DynamicHomeScreen(
                 }
             }
 
+            // Rewarded Ad Section - Bonus de hierro
+            item {
+                AnimatedVisibility(
+                    visible = menuVisible && adMobHelper?.isRewardedAdAvailable() == true,
+                    enter = fadeIn(animationSpec = tween(600))
+                ) {
+                    RewardedAdCard(
+                        onWatchAd = {
+                            showRewardDialog = true
+                        }
+                    )
+                }
+            }
+
             item {
                 AnimatedVisibility(
                     visible = menuVisible,
@@ -151,8 +198,33 @@ fun DynamicHomeScreen(
                     )
                 ) {
                     QuickActionsSection(
-                        onNavigateToDiets = onNavigateToDiets,
-                        onNavigateToProfile = onNavigateToProfile
+                        onNavigateToDiets = {
+                            onNavigateToDiets()
+                            // Mostrar intersticial al navegar
+                            if (context is android.app.Activity) {
+                                adMobHelper?.tryShowInterstitialAd(context)
+                            }
+                        },
+                        onNavigateToProfile = {
+                            onNavigateToProfile()
+                            // Mostrar intersticial al navegar
+                            if (context is android.app.Activity) {
+                                adMobHelper?.tryShowInterstitialAd(context)
+                            }
+                        }
+                    )
+                }
+            }
+
+            // Banner Ad en el medio del contenido
+            item {
+                AnimatedVisibility(
+                    visible = menuVisible,
+                    enter = fadeIn(animationSpec = tween(800))
+                ) {
+                    BannerAdView(
+                        modifier = Modifier.padding(vertical = 8.dp),
+                        adMobService = adMobHelper?.getAdMobService()
                     )
                 }
             }
@@ -207,6 +279,151 @@ fun DynamicHomeScreen(
                             color = NutriGrayDark
                         )
                     }
+                }
+            }
+        }
+    }
+
+    // Dialog para confirmar ver anuncio con recompensa
+    if (showRewardDialog) {
+        AlertDialog(
+            onDismissRequest = { showRewardDialog = false },
+            title = {
+                Text(
+                    text = "¡Bonus de Hierro!",
+                    fontWeight = FontWeight.Bold
+                )
+            },
+            text = {
+                Text(
+                    text = "Mira un video corto y obtén +2mg de hierro extra para tu progreso diario. ¿Quieres continuar?",
+                    lineHeight = 20.sp
+                )
+            },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        showRewardDialog = false
+                        if (context is android.app.Activity && adMobHelper != null) {
+                            adMobHelper.showRewardedAdForIronBonus(
+                                activity = context,
+                                onRewardEarned = { bonusIron ->
+                                    homeViewModel.addIronBonus(bonusIron)
+                                }
+                            )
+                        }
+                    },
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = NutriGreen
+                    )
+                ) {
+                    Text("Ver Video")
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showRewardDialog = false }) {
+                    Text("Cancelar")
+                }
+            }
+        )
+    }
+}
+
+@Composable
+private fun RewardedAdCard(
+    onWatchAd: () -> Unit
+) {
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        colors = CardDefaults.cardColors(
+            containerColor = Color.White
+        ),
+        shape = RoundedCornerShape(20.dp),
+        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
+    ) {
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .background(
+                    brush = Brush.horizontalGradient(
+                        colors = listOf(
+                            NutriGreen.copy(alpha = 0.1f),
+                            NutriOrange.copy(alpha = 0.1f)
+                        )
+                    )
+                )
+                .padding(20.dp)
+        ) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Box(
+                    modifier = Modifier
+                        .size(60.dp)
+                        .background(
+                            NutriGreen.copy(alpha = 0.2f),
+                            shape = androidx.compose.foundation.shape.CircleShape
+                        ),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text(
+                        text = "🩸",
+                        fontSize = 28.sp
+                    )
+                }
+
+                Spacer(modifier = Modifier.width(16.dp))
+
+                Column(modifier = Modifier.weight(1f)) {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text(
+                            text = "Bonus de Hierro",
+                            fontSize = 18.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = NutriGrayDark
+                        )
+                        Spacer(modifier = Modifier.width(4.dp))
+                        Text(
+                            text = "+2mg",
+                            fontSize = 14.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = NutriGreen,
+                            modifier = Modifier
+                                .background(
+                                    NutriGreen.copy(alpha = 0.2f),
+                                    shape = RoundedCornerShape(8.dp)
+                                )
+                                .padding(horizontal = 8.dp, vertical = 2.dp)
+                        )
+                    }
+                    Text(
+                        text = "Mira un video corto y obtén hierro extra",
+                        fontSize = 14.sp,
+                        color = NutriGray
+                    )
+                }
+
+                Button(
+                    onClick = onWatchAd,
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = NutriGreen
+                    ),
+                    shape = RoundedCornerShape(12.dp)
+                ) {
+                    Icon(
+                        Icons.Default.PlayArrow,
+                        contentDescription = null,
+                        modifier = Modifier.size(16.dp)
+                    )
+                    Spacer(modifier = Modifier.width(4.dp))
+                    Text(
+                        "Ver",
+                        fontSize = 14.sp,
+                        fontWeight = FontWeight.SemiBold
+                    )
                 }
             }
         }

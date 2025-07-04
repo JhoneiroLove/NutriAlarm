@@ -15,12 +15,15 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.upao.nutrialarm.domain.model.User
+import com.upao.nutrialarm.presentation.component.BannerAdView
+import com.upao.nutrialarm.presentation.admob.rememberAdMobHelper
 import com.upao.nutrialarm.ui.theme.NutriAlarmTheme
 import com.upao.nutrialarm.ui.theme.NutriBlue
 import com.upao.nutrialarm.ui.theme.NutriGray
@@ -41,6 +44,11 @@ fun ProfileScreen(
     viewModel: UserProfileViewModel = hiltViewModel()
 ) {
     val currentUser by viewModel.currentUser.collectAsState()
+
+    // AdMob integration
+    val adMobHelper = rememberAdMobHelper()
+    val context = LocalContext.current
+
     // Animaciones
     var headerVisible by remember { mutableStateOf(false) }
     var contentVisible by remember { mutableStateOf(false) }
@@ -87,10 +95,38 @@ fun ProfileScreen(
             ) {
                 ProfileContent(
                     currentUser = currentUser,
-                    onNavigateToAlarms = onNavigateToAlarms,
-                    onNavigateToMealSelection = onNavigateToMealSelection,
-                    onNavigateToSettings = onNavigateToSettings,
-                    onLogout = onLogout
+                    adMobHelper = adMobHelper,
+                    onNavigateToAlarms = {
+                        onNavigateToAlarms()
+                        // Mostrar intersticial al navegar
+                        if (context is android.app.Activity) {
+                            adMobHelper?.tryShowInterstitialAd(context)
+                        }
+                    },
+                    onNavigateToMealSelection = {
+                        onNavigateToMealSelection()
+                        // Mostrar intersticial al navegar
+                        if (context is android.app.Activity) {
+                            adMobHelper?.tryShowInterstitialAd(context)
+                        }
+                    },
+                    onNavigateToSettings = {
+                        onNavigateToSettings()
+                        // Mostrar intersticial al navegar
+                        if (context is android.app.Activity) {
+                            adMobHelper?.tryShowInterstitialAd(context)
+                        }
+                    },
+                    onLogout = {
+                        // Mostrar intersticial antes del logout
+                        if (context is android.app.Activity) {
+                            adMobHelper?.tryShowInterstitialAd(context) {
+                                onLogout()
+                            }
+                        } else {
+                            onLogout()
+                        }
+                    }
                 )
             }
         }
@@ -171,10 +207,11 @@ private fun ModernProfileHeader(onNavigateBack: () -> Unit) {
 @Composable
 private fun ProfileContent(
     currentUser: User?,
+    adMobHelper: com.upao.nutrialarm.presentation.admob.AdMobIntegrationHelper?,
     onNavigateToAlarms: () -> Unit,
     onNavigateToMealSelection: () -> Unit,
     onNavigateToSettings: () -> Unit,
-    onLogout: () -> Unit // AGREGAR PARÁMETRO
+    onLogout: () -> Unit
 ) {
     LazyColumn(
         modifier = Modifier.fillMaxSize(),
@@ -183,6 +220,13 @@ private fun ProfileContent(
     ) {
         item {
             UserInfoCard(currentUser = currentUser)
+        }
+
+        item {
+            BannerAdView(
+                modifier = Modifier.padding(vertical = 8.dp),
+                adMobService = adMobHelper?.getAdMobService()
+            )
         }
 
         item {
@@ -202,7 +246,6 @@ private fun ProfileContent(
                 icon = Icons.Default.Person,
                 iconColor = NutriBlue,
                 onClick = {
-                    // TODO: Navegar a editar perfil
                 }
             )
         }
@@ -213,9 +256,7 @@ private fun ProfileContent(
                 subtitle = "Personaliza qué quieres comer en cada horario",
                 icon = Icons.Default.RestaurantMenu,
                 iconColor = NutriGreen,
-                onClick = {
-                    onNavigateToMealSelection()
-                }
+                onClick = onNavigateToMealSelection
             )
         }
 
@@ -225,9 +266,15 @@ private fun ProfileContent(
                 subtitle = "Horarios de comidas y recordatorios",
                 icon = Icons.Default.Notifications,
                 iconColor = NutriOrange,
-                onClick = {
-                    onNavigateToAlarms()
-                }
+                onClick = onNavigateToAlarms
+            )
+        }
+
+        // Banner Ad en el medio de los elementos del menú
+        item {
+            BannerAdView(
+                modifier = Modifier.padding(vertical = 8.dp),
+                adMobService = adMobHelper?.getAdMobService()
             )
         }
 
@@ -249,16 +296,115 @@ private fun ProfileContent(
                 subtitle = "Notificaciones, tema y configuración de la app",
                 icon = Icons.Default.Settings,
                 iconColor = NutriGray,
-                onClick = {
-                    onNavigateToSettings()
-                }
+                onClick = onNavigateToSettings
             )
+        }
+
+        if (adMobHelper?.isRewardedAdAvailable() == true) {
+            item {
+                RewardedAdProfileCard(
+                    onWatchAd = {
+                    }
+                )
+            }
         }
 
         item {
             Spacer(modifier = Modifier.height(16.dp))
 
-            LogoutButton(onLogout = onLogout) // PASAR EL PARÁMETRO
+            LogoutButton(onLogout = onLogout)
+        }
+
+        // Banner Ad final
+        item {
+            BannerAdView(
+                modifier = Modifier.padding(vertical = 16.dp),
+                adMobService = adMobHelper?.getAdMobService()
+            )
+        }
+    }
+}
+
+@Composable
+private fun RewardedAdProfileCard(
+    onWatchAd: () -> Unit
+) {
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        colors = CardDefaults.cardColors(
+            containerColor = Color.White
+        ),
+        shape = RoundedCornerShape(20.dp),
+        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
+    ) {
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .background(
+                    brush = Brush.horizontalGradient(
+                        colors = listOf(
+                            NutriOrange.copy(alpha = 0.1f),
+                            NutriRed.copy(alpha = 0.1f)
+                        )
+                    )
+                )
+                .padding(20.dp)
+        ) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Box(
+                    modifier = Modifier
+                        .size(60.dp)
+                        .background(
+                            NutriOrange.copy(alpha = 0.2f),
+                            shape = androidx.compose.foundation.shape.CircleShape
+                        ),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text(
+                        text = "⭐",
+                        fontSize = 28.sp
+                    )
+                }
+
+                Spacer(modifier = Modifier.width(16.dp))
+
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(
+                        text = "Funciones Premium",
+                        fontSize = 18.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = NutriGrayDark
+                    )
+                    Text(
+                        text = "Mira un video y desbloquea características especiales",
+                        fontSize = 14.sp,
+                        color = NutriGray
+                    )
+                }
+
+                Button(
+                    onClick = onWatchAd,
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = NutriOrange
+                    ),
+                    shape = RoundedCornerShape(12.dp)
+                ) {
+                    Icon(
+                        Icons.Default.PlayArrow,
+                        contentDescription = null,
+                        modifier = Modifier.size(16.dp)
+                    )
+                    Spacer(modifier = Modifier.width(4.dp))
+                    Text(
+                        "Ver",
+                        fontSize = 14.sp,
+                        fontWeight = FontWeight.SemiBold
+                    )
+                }
+            }
         }
     }
 }

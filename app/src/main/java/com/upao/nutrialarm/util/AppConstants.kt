@@ -51,7 +51,7 @@ object AppConstants {
     const val MIN_HEIGHT = 50.0 // cm
     const val MAX_HEIGHT = 250.0 // cm
 
-    // IDs de AdMob (ya definidos en AdMobService, pero centralizados aquí)
+    // IDs de AdMob
     object AdMob {
         const val APP_ID = "ca-app-pub-9430651300419058~2826649282"
         const val BANNER_AD_UNIT_ID = "ca-app-pub-9430651300419058/3671428294"

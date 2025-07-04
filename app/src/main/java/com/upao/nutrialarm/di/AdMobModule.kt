@@ -2,6 +2,7 @@ package com.upao.nutrialarm.di
 
 import android.content.Context
 import com.upao.nutrialarm.data.remote.admob.AdMobService
+import com.upao.nutrialarm.presentation.admob.AdMobIntegrationHelper
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -17,5 +18,14 @@ object AdMobModule {
     @Singleton
     fun provideAdMobService(@ApplicationContext context: Context): AdMobService {
         return AdMobService(context)
+    }
+
+    @Provides
+    @Singleton
+    fun provideAdMobIntegrationHelper(
+        @ApplicationContext context: Context,
+        adMobService: AdMobService
+    ): AdMobIntegrationHelper {
+        return AdMobIntegrationHelper(context, adMobService)
     }
 }
