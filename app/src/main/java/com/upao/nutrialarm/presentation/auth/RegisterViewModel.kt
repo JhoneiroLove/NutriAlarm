@@ -74,7 +74,6 @@ class RegisterViewModel @Inject constructor(
             }
         }
 
-        // Validación de valores numéricos
         val ageInt = age.toIntOrNull()
         val weightDouble = weight.toDoubleOrNull()
         val heightDouble = height.toDoubleOrNull()
@@ -105,9 +104,9 @@ class RegisterViewModel @Inject constructor(
                     email = email.trim(),
                     password = password,
                     name = name.trim(),
-                    age = ageInt,
-                    weight = weightDouble,
-                    height = heightDouble,
+                    age = ageInt!!,
+                    weight = weightDouble!!,
+                    height = heightDouble!!,
                     activityLevel = activityLevel,
                     anemiaRisk = anemiaRisk
                 )
