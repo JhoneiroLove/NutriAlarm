@@ -31,14 +31,13 @@ class RegisterViewModel @Inject constructor(
         activityLevel: ActivityLevel,
         anemiaRisk: AnemiaRisk
     ) {
-        // Validaciones
         when {
             email.isBlank() -> {
-                showError("El email es requerido")
+                showError("El correo electrónico es requerido")
                 return
             }
             !android.util.Patterns.EMAIL_ADDRESS.matcher(email).matches() -> {
-                showError("Email inválido")
+                showError("El formato del correo electrónico no es válido")
                 return
             }
             password.isBlank() -> {
@@ -54,7 +53,11 @@ class RegisterViewModel @Inject constructor(
                 return
             }
             name.isBlank() -> {
-                showError("El nombre es requerido")
+                showError("El nombre completo es requerido")
+                return
+            }
+            name.length < 2 -> {
+                showError("El nombre debe tener al menos 2 caracteres")
                 return
             }
             age.isBlank() -> {
@@ -71,52 +74,66 @@ class RegisterViewModel @Inject constructor(
             }
         }
 
+        // Validación de valores numéricos
         val ageInt = age.toIntOrNull()
         val weightDouble = weight.toDoubleOrNull()
         val heightDouble = height.toDoubleOrNull()
 
         when {
-            ageInt == null || ageInt <= 0 -> {
-                showError("Edad inválida")
+            ageInt == null || ageInt <= 0 || ageInt > 120 -> {
+                showError("La edad debe ser un número válido entre 1 y 120 años")
                 return
             }
-            weightDouble == null || weightDouble <= 0 -> {
-                showError("Peso inválido")
+            weightDouble == null || weightDouble <= 0 || weightDouble > 300 -> {
+                showError("El peso debe ser un número válido entre 1 y 300 kg")
                 return
             }
-            heightDouble == null || heightDouble <= 0 -> {
-                showError("Altura inválida")
+            heightDouble == null || heightDouble <= 0 || heightDouble > 250 -> {
+                showError("La altura debe ser un número válido entre 1 y 250 cm")
                 return
             }
         }
 
         viewModelScope.launch {
-            _uiState.value = _uiState.value.copy(isLoading = true, errorMessage = null)
-
-            registerUseCase(
-                email = email,
-                password = password,
-                name = name,
-                age = ageInt!!,
-                weight = weightDouble!!,
-                height = heightDouble!!,
-                activityLevel = activityLevel,
-                anemiaRisk = anemiaRisk
-            ).fold(
-                onSuccess = { user ->
-                    _uiState.value = _uiState.value.copy(
-                        isLoading = false,
-                        isRegistrationSuccessful = true,
-                        user = user
-                    )
-                },
-                onFailure = { exception ->
-                    _uiState.value = _uiState.value.copy(
-                        isLoading = false,
-                        errorMessage = "Error de registro: ${exception.message}"
-                    )
-                }
+            _uiState.value = _uiState.value.copy(
+                isLoading = true,
+                errorMessage = null
             )
+
+            try {
+                val result = registerUseCase(
+                    email = email.trim(),
+                    password = password,
+                    name = name.trim(),
+                    age = ageInt,
+                    weight = weightDouble,
+                    height = heightDouble,
+                    activityLevel = activityLevel,
+                    anemiaRisk = anemiaRisk
+                )
+
+                result.fold(
+                    onSuccess = { user ->
+                        _uiState.value = _uiState.value.copy(
+                            isLoading = false,
+                            isRegistrationSuccessful = true,
+                            user = user,
+                            errorMessage = null
+                        )
+                    },
+                    onFailure = { exception ->
+                        _uiState.value = _uiState.value.copy(
+                            isLoading = false,
+                            errorMessage = exception.message ?: "Error de registro desconocido"
+                        )
+                    }
+                )
+            } catch (e: Exception) {
+                _uiState.value = _uiState.value.copy(
+                    isLoading = false,
+                    errorMessage = "Error inesperado: ${e.message}"
+                )
+            }
         }
     }
 
@@ -129,7 +146,10 @@ class RegisterViewModel @Inject constructor(
     }
 
     fun resetRegistrationState() {
-        _uiState.value = _uiState.value.copy(isRegistrationSuccessful = false)
+        _uiState.value = _uiState.value.copy(
+            isRegistrationSuccessful = false,
+            errorMessage = null
+        )
     }
 }
 

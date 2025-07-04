@@ -72,7 +72,6 @@ class MainActivity : ComponentActivity() {
                             val integrityResult = databaseInitializer.verifyDataIntegrity()
                             Log.d("MainActivity", "Data integrity: ${integrityResult}")
 
-                            // Marcar que no es el primer lanzamiento si los datos están OK
                             if (integrityResult.isValid) {
                                 preferencesManager.isFirstLaunch = false
                             }
@@ -84,7 +83,7 @@ class MainActivity : ComponentActivity() {
                         }
                     }
 
-                    NavigationGraph(navController = navController)
+                    NavigationGraph()
                 }
             }
         }

@@ -1,6 +1,17 @@
 package com.upao.nutrialarm.presentation.navigation
 
-import androidx.compose.runtime.Composable
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
@@ -11,22 +22,40 @@ import com.upao.nutrialarm.presentation.diet.DietListScreen
 import com.upao.nutrialarm.presentation.diet.DietDetailScreen
 import com.upao.nutrialarm.presentation.meal.MealRecipeScreen
 import com.upao.nutrialarm.presentation.meal.MealSelectionScreen
-import com.upao.nutrialarm.presentation.home.DynamicHomeScreen // CAMBIADO
+import com.upao.nutrialarm.presentation.home.DynamicHomeScreen
 import com.upao.nutrialarm.presentation.profile.ProfileScreen
 import com.upao.nutrialarm.presentation.alarm.AlarmConfigScreen
 import com.upao.nutrialarm.presentation.settings.SettingsScreen
+import androidx.hilt.navigation.compose.hiltViewModel
 
 @Composable
 fun NavigationGraph(
-    navController: NavHostController = rememberNavController()
+    navController: NavHostController = rememberNavController(),
+    sessionViewModel: SessionViewModel = hiltViewModel()
 ) {
+    // Observar el estado de autenticación
+    val authState by sessionViewModel.authState.collectAsState()
+
+    // Verificar sesión al iniciar
+    LaunchedEffect(Unit) {
+        sessionViewModel.checkAuthState()
+    }
+
+    // Determinar la ruta inicial basada en el estado de autenticación
+    val startDestination = when (authState) {
+        is AuthState.Authenticated -> "home"
+        is AuthState.Unauthenticated -> "login"
+        AuthState.Loading -> "splash" // Opcional: pantalla de carga
+    }
+
     NavHost(
         navController = navController,
-        startDestination = "login"
+        startDestination = startDestination
     ) {
-        // ========================================
-        // AUTENTICACIÓN
-        // ========================================
+        composable("splash") {
+            SplashScreen()
+        }
+
         composable("login") {
             LoginScreen(
                 onNavigateToHome = {
@@ -53,11 +82,8 @@ fun NavigationGraph(
             )
         }
 
-        // ========================================
-        // PANTALLA PRINCIPAL - AHORA DINÁMICA
-        // ========================================
         composable("home") {
-            DynamicHomeScreen( // USAR LA NUEVA PANTALLA DINÁMICA
+            DynamicHomeScreen(
                 onNavigateToDiets = {
                     navController.navigate("diets")
                 },
@@ -67,9 +93,6 @@ fun NavigationGraph(
             )
         }
 
-        // ========================================
-        // DIETAS Y COMIDAS
-        // ========================================
         composable("diets") {
             DietListScreen(
                 onNavigateBack = {
@@ -104,9 +127,6 @@ fun NavigationGraph(
             )
         }
 
-        // ========================================
-        // SELECCIÓN PERSONALIZADA DE MENÚS
-        // ========================================
         composable("meal_selection") {
             MealSelectionScreen(
                 onNavigateBack = {
@@ -118,9 +138,6 @@ fun NavigationGraph(
             )
         }
 
-        // ========================================
-        // PERFIL Y CONFIGURACIÓN
-        // ========================================
         composable("profile") {
             ProfileScreen(
                 onNavigateBack = {
@@ -134,13 +151,16 @@ fun NavigationGraph(
                 },
                 onNavigateToSettings = {
                     navController.navigate("settings")
+                },
+                onLogout = {
+                    sessionViewModel.logout()
+                    navController.navigate("login") {
+                        popUpTo(0) { inclusive = true }
+                    }
                 }
             )
         }
 
-        // ========================================
-        // ALARMAS
-        // ========================================
         composable("alarms") {
             AlarmConfigScreen(
                 onNavigateBack = {
@@ -149,14 +169,73 @@ fun NavigationGraph(
             )
         }
 
-        // ========================================
-        // CONFIGURACIÓN
-        // ========================================
         composable("settings") {
             SettingsScreen(
                 onNavigateBack = {
                     navController.popBackStack()
                 }
+            )
+        }
+    }
+}
+
+@Composable
+private fun SplashScreen() {
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(
+                brush = Brush.verticalGradient(
+                    colors = listOf(
+                        Color(0xFF1E90FF),
+                        Color(0xFF60A5FA)
+                    )
+                )
+            ),
+        contentAlignment = Alignment.Center
+    ) {
+        Column(
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.spacedBy(24.dp)
+        ) {
+            // Logo
+            Card(
+                modifier = Modifier.size(120.dp),
+                shape = RoundedCornerShape(30.dp),
+                colors = CardDefaults.cardColors(
+                    containerColor = Color.White
+                )
+            ) {
+                Box(
+                    modifier = Modifier.fillMaxSize(),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text(
+                        text = "🍓",
+                        fontSize = 60.sp
+                    )
+                }
+            }
+
+            // Nombre de la app
+            Text(
+                text = "NutriAlarm",
+                fontSize = 32.sp,
+                fontWeight = FontWeight.Bold,
+                color = Color.White
+            )
+
+            // Indicador de carga
+            CircularProgressIndicator(
+                color = Color.White,
+                strokeWidth = 3.dp,
+                modifier = Modifier.size(32.dp)
+            )
+
+            Text(
+                text = "Verificando sesión...",
+                fontSize = 16.sp,
+                color = Color.White.copy(alpha = 0.9f)
             )
         }
     }

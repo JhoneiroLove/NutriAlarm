@@ -19,31 +19,59 @@ class LoginViewModel @Inject constructor(
     val uiState: StateFlow<LoginUiState> = _uiState.asStateFlow()
 
     fun login(email: String, password: String) {
-        if (email.isBlank() || password.isBlank()) {
-            _uiState.value = _uiState.value.copy(
-                errorMessage = "Email y contraseña son requeridos"
-            )
-            return
+        // Validaciones básicas
+        when {
+            email.isBlank() -> {
+                _uiState.value = _uiState.value.copy(
+                    errorMessage = "El correo electrónico es requerido"
+                )
+                return
+            }
+            password.isBlank() -> {
+                _uiState.value = _uiState.value.copy(
+                    errorMessage = "La contraseña es requerida"
+                )
+                return
+            }
+            !android.util.Patterns.EMAIL_ADDRESS.matcher(email).matches() -> {
+                _uiState.value = _uiState.value.copy(
+                    errorMessage = "El formato del correo electrónico no es válido"
+                )
+                return
+            }
         }
 
         viewModelScope.launch {
-            _uiState.value = _uiState.value.copy(isLoading = true, errorMessage = null)
-
-            loginUseCase(email, password).fold(
-                onSuccess = { user ->
-                    _uiState.value = _uiState.value.copy(
-                        isLoading = false,
-                        isLoginSuccessful = true,
-                        user = user
-                    )
-                },
-                onFailure = { exception ->
-                    _uiState.value = _uiState.value.copy(
-                        isLoading = false,
-                        errorMessage = "Error de autenticación: ${exception.message}"
-                    )
-                }
+            _uiState.value = _uiState.value.copy(
+                isLoading = true,
+                errorMessage = null
             )
+
+            try {
+                val result = loginUseCase(email.trim(), password)
+
+                result.fold(
+                    onSuccess = { user ->
+                        _uiState.value = _uiState.value.copy(
+                            isLoading = false,
+                            isLoginSuccessful = true,
+                            user = user,
+                            errorMessage = null
+                        )
+                    },
+                    onFailure = { exception ->
+                        _uiState.value = _uiState.value.copy(
+                            isLoading = false,
+                            errorMessage = exception.message ?: "Error de autenticación desconocido"
+                        )
+                    }
+                )
+            } catch (e: Exception) {
+                _uiState.value = _uiState.value.copy(
+                    isLoading = false,
+                    errorMessage = "Error inesperado: ${e.message}"
+                )
+            }
         }
     }
 
@@ -52,7 +80,10 @@ class LoginViewModel @Inject constructor(
     }
 
     fun resetLoginState() {
-        _uiState.value = _uiState.value.copy(isLoginSuccessful = false)
+        _uiState.value = _uiState.value.copy(
+            isLoginSuccessful = false,
+            errorMessage = null
+        )
     }
 }
 

@@ -37,6 +37,7 @@ fun ProfileScreen(
     onNavigateToAlarms: () -> Unit = {},
     onNavigateToMealSelection: () -> Unit = {},
     onNavigateToSettings: () -> Unit = {},
+    onLogout: () -> Unit = {},
     viewModel: UserProfileViewModel = hiltViewModel()
 ) {
     val currentUser by viewModel.currentUser.collectAsState()
@@ -88,7 +89,8 @@ fun ProfileScreen(
                     currentUser = currentUser,
                     onNavigateToAlarms = onNavigateToAlarms,
                     onNavigateToMealSelection = onNavigateToMealSelection,
-                    onNavigateToSettings = onNavigateToSettings
+                    onNavigateToSettings = onNavigateToSettings,
+                    onLogout = onLogout
                 )
             }
         }
@@ -171,7 +173,8 @@ private fun ProfileContent(
     currentUser: User?,
     onNavigateToAlarms: () -> Unit,
     onNavigateToMealSelection: () -> Unit,
-    onNavigateToSettings: () -> Unit
+    onNavigateToSettings: () -> Unit,
+    onLogout: () -> Unit // AGREGAR PARÁMETRO
 ) {
     LazyColumn(
         modifier = Modifier.fillMaxSize(),
@@ -255,7 +258,7 @@ private fun ProfileContent(
         item {
             Spacer(modifier = Modifier.height(16.dp))
 
-            LogoutButton()
+            LogoutButton(onLogout = onLogout) // PASAR EL PARÁMETRO
         }
     }
 }
@@ -453,11 +456,9 @@ private fun ProfileMenuItem(
 }
 
 @Composable
-private fun LogoutButton() {
+private fun LogoutButton(onLogout: () -> Unit) {
     Button(
-        onClick = {
-            // TODO: Implementar logout
-        },
+        onClick = onLogout,
         modifier = Modifier.fillMaxWidth(),
         colors = ButtonDefaults.buttonColors(
             containerColor = NutriRed

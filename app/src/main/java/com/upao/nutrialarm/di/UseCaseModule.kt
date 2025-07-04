@@ -1,10 +1,13 @@
 package com.upao.nutrialarm.di
 
+import com.upao.nutrialarm.data.local.preferences.PreferencesManager
+import com.upao.nutrialarm.data.remote.firebase.AuthService
 import com.upao.nutrialarm.domain.repository.AlarmRepository
 import com.upao.nutrialarm.domain.repository.UserMealPreferenceRepository
 import com.upao.nutrialarm.domain.repository.MealConsumptionRepository
 import com.upao.nutrialarm.domain.repository.UserRepository
 import com.upao.nutrialarm.domain.usecase.alarm.*
+import com.upao.nutrialarm.domain.usecase.auth.LogoutUseCase
 import com.upao.nutrialarm.domain.usecase.meal.*
 import com.upao.nutrialarm.domain.usecase.user.GetCurrentUserUseCase
 import com.upao.nutrialarm.util.AlarmManagerUtil
@@ -17,6 +20,15 @@ import javax.inject.Singleton
 @Module
 @InstallIn(SingletonComponent::class)
 object UseCaseModule {
+
+    @Provides
+    @Singleton
+    fun provideLogoutUseCase(
+        authService: AuthService,
+        preferencesManager: PreferencesManager
+    ): LogoutUseCase {
+        return LogoutUseCase(authService, preferencesManager)
+    }
 
     // USER USE CASES
     @Provides
