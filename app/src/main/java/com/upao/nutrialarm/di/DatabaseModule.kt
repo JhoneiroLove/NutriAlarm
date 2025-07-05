@@ -5,6 +5,9 @@ import androidx.room.Room
 import com.upao.nutrialarm.data.local.database.AppDatabase
 import com.upao.nutrialarm.data.local.database.dao.*
 import com.upao.nutrialarm.data.local.database.DatabaseInitializer
+import com.upao.nutrialarm.data.remote.firebase.FirestoreService
+import com.upao.nutrialarm.data.repository.UserRepositoryImpl
+import com.upao.nutrialarm.domain.repository.UserRepository
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -47,13 +50,4 @@ object DatabaseModule {
     @Provides
     fun provideMealConsumptionDao(database: AppDatabase): MealConsumptionDao =
         database.mealConsumptionDao()
-
-    @Provides
-    @Singleton
-    fun provideDatabaseInitializer(
-        mealDao: MealDao,
-        dietDao: DietDao
-    ): DatabaseInitializer {
-        return DatabaseInitializer(mealDao, dietDao)
-    }
 }

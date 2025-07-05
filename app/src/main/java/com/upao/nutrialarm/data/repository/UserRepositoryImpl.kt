@@ -18,14 +18,44 @@ class UserRepositoryImpl @Inject constructor(
     override suspend fun saveUser(user: User): Result<User> {
         return try {
             userDao.insertUser(user.toEntity())
-            firestoreService.saveUser(user)
+
+            try {
+                firestoreService.saveUser(user)
+            } catch (e: Exception) {
+                android.util.Log.w("UserRepository", "Error syncing to Firestore: ${e.message}")
+            }
+
+            Result.success(user)
         } catch (e: Exception) {
+            android.util.Log.e("UserRepository", "Error saving user: ${e.message}", e)
+            Result.failure(e)
+        }
+    }
+
+    override suspend fun updateUser(user: User): Result<User> {
+        return try {
+            userDao.updateUser(user.toEntity())
+
+            try {
+                firestoreService.saveUser(user)
+            } catch (e: Exception) {
+                android.util.Log.w("UserRepository", "Error syncing to Firestore: ${e.message}")
+            }
+
+            Result.success(user)
+        } catch (e: Exception) {
+            android.util.Log.e("UserRepository", "Error updating user: ${e.message}", e)
             Result.failure(e)
         }
     }
 
     override suspend fun getCurrentUser(): User? {
-        return userDao.getCurrentUser()?.toDomain()
+        return try {
+            userDao.getCurrentUser()?.toDomain()
+        } catch (e: Exception) {
+            android.util.Log.e("UserRepository", "Error getting current user: ${e.message}", e)
+            null
+        }
     }
 
     override fun getCurrentUserFlow(): Flow<User?> {
@@ -33,15 +63,11 @@ class UserRepositoryImpl @Inject constructor(
     }
 
     override suspend fun getUserById(userId: String): User? {
-        return userDao.getUserById(userId)?.toDomain()
-    }
-
-    override suspend fun updateUser(user: User): Result<User> {
         return try {
-            userDao.updateUser(user.toEntity())
-            firestoreService.saveUser(user)
+            userDao.getUserById(userId)?.toDomain()
         } catch (e: Exception) {
-            Result.failure(e)
+            android.util.Log.e("UserRepository", "Error getting user by ID: ${e.message}", e)
+            null
         }
     }
 
@@ -50,6 +76,7 @@ class UserRepositoryImpl @Inject constructor(
             userDao.deleteUser(user.toEntity())
             Result.success(Unit)
         } catch (e: Exception) {
+            android.util.Log.e("UserRepository", "Error deleting user: ${e.message}", e)
             Result.failure(e)
         }
     }

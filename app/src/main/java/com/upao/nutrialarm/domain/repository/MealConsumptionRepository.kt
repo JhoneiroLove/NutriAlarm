@@ -10,6 +10,7 @@ interface MealConsumptionRepository {
     suspend fun getMealConsumptionByType(userId: String, mealType: String, date: String): List<MealConsumption>
     suspend fun insertMealConsumption(consumption: MealConsumption): Result<MealConsumption>
     suspend fun deleteMealConsumption(consumption: MealConsumption): Result<Unit>
+    suspend fun saveMealConsumption(consumption: MealConsumption): Result<MealConsumption>
     suspend fun deleteMealConsumptionByType(userId: String, mealType: String, date: String): Result<Unit>
     suspend fun getDailyNutritionSummary(userId: String, date: String): DailyNutritionSummary?
     suspend fun getConsumedMealTypes(userId: String, date: String): List<String>

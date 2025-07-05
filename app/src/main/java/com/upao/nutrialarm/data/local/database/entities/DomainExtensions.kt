@@ -72,34 +72,6 @@ fun Diet.toEntity(): DietEntity {
     )
 }
 
-fun UserEntity.toDomain(): User {
-    return User(
-        id = this.id,
-        email = this.email,
-        name = this.name,
-        age = this.age,
-        weight = this.weight,
-        height = this.height,
-        activityLevel = ActivityLevel.valueOf(this.activityLevel),
-        anemiaRisk = AnemiaRisk.valueOf(this.anemiaRisk),
-        createdAt = this.createdAt
-    )
-}
-
-fun User.toEntity(): UserEntity {
-    return UserEntity(
-        id = this.id,
-        email = this.email,
-        name = this.name,
-        age = this.age,
-        weight = this.weight,
-        height = this.height,
-        activityLevel = this.activityLevel.name,
-        anemiaRisk = this.anemiaRisk.name,
-        createdAt = this.createdAt
-    )
-}
-
 fun MealConsumptionEntity.toDomain(): MealConsumption {
     return MealConsumption(
         id = this.id,

@@ -18,6 +18,10 @@ class MealConsumptionRepositoryImpl @Inject constructor(
     private val dietRepository: DietRepository
 ) : MealConsumptionRepository {
 
+    override suspend fun saveMealConsumption(consumption: MealConsumption): Result<MealConsumption> {
+        return Result.success(consumption)
+    }
+
     override suspend fun getMealConsumptionForDay(userId: String, date: String): List<MealConsumption> {
         return mealConsumptionDao.getMealConsumptionForDay(userId, date).map { it.toDomain() }
     }
