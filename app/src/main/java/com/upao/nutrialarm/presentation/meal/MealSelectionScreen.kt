@@ -40,7 +40,7 @@ fun MealSelectionScreen(
     var contentVisible by remember { mutableStateOf(false) }
 
     LaunchedEffect(Unit) {
-        viewModel.loadUserPreferences("current_user") // TODO: Get real user ID
+        viewModel.loadUserPreferences("current_user")
         headerVisible = true
         delay(200)
         contentVisible = true

@@ -24,6 +24,8 @@ import com.upao.nutrialarm.presentation.meal.MealRecipeScreen
 import com.upao.nutrialarm.presentation.meal.MealSelectionScreen
 import com.upao.nutrialarm.presentation.home.DynamicHomeScreen
 import com.upao.nutrialarm.presentation.profile.ProfileScreen
+import com.upao.nutrialarm.presentation.profile.EditProfileScreen
+import com.upao.nutrialarm.presentation.profile.HealthStatusScreen
 import com.upao.nutrialarm.presentation.alarm.AlarmConfigScreen
 import com.upao.nutrialarm.presentation.settings.SettingsScreen
 import com.upao.nutrialarm.presentation.history.ConsumptionHistoryScreen
@@ -46,7 +48,7 @@ fun NavigationGraph(
     val startDestination = when (authState) {
         is AuthState.Authenticated -> "home"
         is AuthState.Unauthenticated -> "login"
-        AuthState.Loading -> "splash" // Opcional: pantalla de carga
+        AuthState.Loading -> "splash"
     }
 
     NavHost(
@@ -156,11 +158,35 @@ fun NavigationGraph(
                 onNavigateToSettings = {
                     navController.navigate("settings")
                 },
+                onNavigateToEditProfile = {
+                    navController.navigate("edit_profile")
+                },
+                onNavigateToHealthStatus = {
+                    navController.navigate("health_status")
+                },
                 onLogout = {
                     sessionViewModel.logout()
                     navController.navigate("login") {
                         popUpTo(0) { inclusive = true }
                     }
+                }
+            )
+        }
+
+        // ruta para editar perfil
+        composable("edit_profile") {
+            EditProfileScreen(
+                onNavigateBack = {
+                    navController.popBackStack()
+                }
+            )
+        }
+
+        // ruta para estado de salud
+        composable("health_status") {
+            HealthStatusScreen(
+                onNavigateBack = {
+                    navController.popBackStack()
                 }
             )
         }

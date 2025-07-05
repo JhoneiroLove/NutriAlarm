@@ -40,6 +40,8 @@ fun ProfileScreen(
     onNavigateToAlarms: () -> Unit = {},
     onNavigateToMealSelection: () -> Unit = {},
     onNavigateToSettings: () -> Unit = {},
+    onNavigateToEditProfile: () -> Unit = {},
+    onNavigateToHealthStatus: () -> Unit = {},
     onLogout: () -> Unit = {},
     viewModel: UserProfileViewModel = hiltViewModel()
 ) {
@@ -96,6 +98,20 @@ fun ProfileScreen(
                 ProfileContent(
                     currentUser = currentUser,
                     adMobHelper = adMobHelper,
+                    onNavigateToEditProfile = {
+                        onNavigateToEditProfile()
+                        // Mostrar intersticial al navegar
+                        if (context is android.app.Activity) {
+                            adMobHelper?.tryShowInterstitialAd(context)
+                        }
+                    },
+                    onNavigateToHealthStatus = {
+                        onNavigateToHealthStatus()
+                        // Mostrar intersticial al navegar
+                        if (context is android.app.Activity) {
+                            adMobHelper?.tryShowInterstitialAd(context)
+                        }
+                    },
                     onNavigateToAlarms = {
                         onNavigateToAlarms()
                         // Mostrar intersticial al navegar
@@ -208,6 +224,8 @@ private fun ModernProfileHeader(onNavigateBack: () -> Unit) {
 private fun ProfileContent(
     currentUser: User?,
     adMobHelper: com.upao.nutrialarm.presentation.admob.AdMobIntegrationHelper?,
+    onNavigateToEditProfile: () -> Unit,
+    onNavigateToHealthStatus: () -> Unit,
     onNavigateToAlarms: () -> Unit,
     onNavigateToMealSelection: () -> Unit,
     onNavigateToSettings: () -> Unit,
@@ -245,8 +263,7 @@ private fun ProfileContent(
                 subtitle = "Edad, peso, altura, nivel de actividad",
                 icon = Icons.Default.Person,
                 iconColor = NutriBlue,
-                onClick = {
-                }
+                onClick = onNavigateToEditProfile
             )
         }
 
@@ -281,12 +298,10 @@ private fun ProfileContent(
         item {
             ProfileMenuItem(
                 title = "Estado de Salud",
-                subtitle = "Nivel de riesgo de anemia",
+                subtitle = "Nivel de riesgo de anemia y evaluación nutricional",
                 icon = Icons.Default.Favorite,
                 iconColor = NutriRed,
-                onClick = {
-                    // TODO: Navegar a estado de salud
-                }
+                onClick = onNavigateToHealthStatus
             )
         }
 
@@ -304,6 +319,7 @@ private fun ProfileContent(
             item {
                 RewardedAdProfileCard(
                     onWatchAd = {
+                        // lógica del anuncio con recompensa
                     }
                 )
             }
